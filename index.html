@@ -9,7 +9,7 @@
   :root{
     --bg:#0f1117; --bg2:#161925; --card:#1b1f2e; --border:#2a2f42;
     --text:#e8eaf0; --muted:#8892a6; --accent:#ff8a3d; --accent2:#ffb37a;
-    --green:#3ddc84; --red:#ff5d5d; --yellow:#ffd23d;
+    --green:#3ddc84; --red:#ff5d5d; --yellow:#ffd23d; --blue:#7ad4ff; --purple:#d9a3ff;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;font-size:13px;}
@@ -25,13 +25,17 @@
   button.primary:hover{background:var(--accent2);color:#1a1200;}
   button.danger{border-color:var(--red);color:var(--red);}
   button.small{padding:4px 8px;font-size:11px;}
-  .globalSearch{display:flex;align-items:center;gap:8px;padding:12px 20px 0;}
-  .globalSearch input{flex:1;max-width:420px;background:var(--card);border:1px solid var(--border);
+  .globalSearch{display:flex;align-items:center;gap:8px;padding:12px 20px 0;flex-wrap:wrap;}
+  .globalSearch input[type=text]{flex:1;max-width:420px;background:var(--card);border:1px solid var(--border);
     color:var(--text);padding:9px 12px;border-radius:7px;font-size:13px;}
   .globalSearch input:focus{outline:none;border-color:var(--accent);}
   .globalSearch small{color:var(--muted);}
+  .statusChips{display:flex;gap:6px;flex-wrap:wrap;padding:10px 20px 0;}
+  .chip{padding:5px 11px;border-radius:14px;font-size:11px;cursor:pointer;border:1px solid var(--border);
+    background:var(--card);color:var(--muted);}
+  .chip.active{border-color:var(--accent);color:var(--accent2);background:#ff8a3d18;}
   main{padding:10px 20px 16px;}
-  .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:8px;max-height:76vh;}
+  .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:8px;max-height:74vh;}
   table{border-collapse:collapse;width:100%;min-width:1500px;}
   th,td{padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap;text-align:left;}
   thead th{background:var(--bg2);position:sticky;top:0;z-index:2;vertical-align:top;}
@@ -42,24 +46,25 @@
   .sortbtn.active{color:var(--accent);}
   th input.filterInput{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);
     border-radius:4px;padding:4px 6px;font-size:11px;}
-  th input.filterInput::placeholder{color:#556;}
   tbody tr:hover{background:#20243380;}
   td a{color:var(--accent2);}
-  .badge{padding:2px 7px;border-radius:10px;font-size:10.5px;font-weight:600;}
-  .badge.sim{background:#3ddc8422;color:var(--green);}
-  .badge.nao{background:#8892a622;color:var(--muted);}
-  .badge.aberto{background:#ffd23d22;color:var(--yellow);}
-  .badge.finalizado{background:#3ddc8422;color:var(--green);}
-  .acoes{display:flex;gap:4px;flex-wrap:wrap;min-width:180px;}
+  .badge{padding:3px 9px;border-radius:10px;font-size:10.5px;font-weight:600;white-space:nowrap;}
+  .st-disponivel{background:#8892a622;color:var(--muted);}
+  .st-reservado{background:#ffd23d22;color:var(--yellow);}
+  .st-convertido{background:#7ad4ff22;color:var(--blue);}
+  .st-pedidolancado{background:#7ad4ff22;color:var(--blue);}
+  .st-separacaosolicitada{background:#d9a3ff22;color:var(--purple);}
+  .st-osencerrada{background:#3ddc8422;color:var(--green);}
+  .st-finalizado{background:#3ddc8444;color:var(--green);}
+  .acoes{display:flex;gap:4px;flex-wrap:wrap;min-width:160px;}
   /* Modal */
   .overlay{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:50;}
   .overlay.show{display:flex;}
-  .modal{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;width:340px;}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;width:360px;max-height:85vh;overflow:auto;}
   .modal h3{margin:0 0 12px;color:var(--accent2);font-size:15px;}
   .modal label{display:block;margin:10px 0 4px;color:var(--muted);font-size:12px;}
   .modal input[type=text],.modal input[type=password]{width:100%;padding:8px;border-radius:6px;
     border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;}
-  .modal .chk{display:flex;align-items:center;gap:8px;margin:10px 0;}
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
   .msg{font-size:12px;margin-top:8px;min-height:16px;}
   .msg.err{color:var(--red);}
@@ -74,6 +79,9 @@
   .loading{padding:40px;text-align:center;color:var(--muted);}
   .gestor-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
   .gestor-row span{flex:1;}
+  .histItem{border-left:2px solid var(--border);padding:4px 0 4px 10px;margin-bottom:4px;font-size:11.5px;}
+  .histItem b{color:var(--accent2);}
+  .histItem .when{color:var(--muted);font-size:10.5px;}
 </style>
 </head>
 <body>
@@ -95,6 +103,7 @@
   <input type="text" id="globalSearch" placeholder="Buscar em todos os campos (pedido, OS, descrição, defeito, fotos...)">
   <small id="globalSearchCount"></small>
 </div>
+<div class="statusChips" id="statusChips"></div>
 
 <main>
   <div class="table-wrap"><div class="loading">Carregando dados...</div></div>
@@ -115,15 +124,14 @@
 <!-- ===== Modal: reservar ===== -->
 <div class="overlay" id="ovReservar">
   <div class="modal">
-    <h3>Reservar item <span id="rPedido" style="color:var(--muted);font-weight:normal;"></span></h3>
-    <div class="chk"><input type="checkbox" id="chkReservar" checked><label for="chkReservar" style="margin:0;">Reservar máquina</label></div>
-    <div class="chk"><input type="checkbox" id="chkConverter"><label for="chkConverter" style="margin:0;">Converter OS p/ Cód. Danificado</label></div>
+    <h3>Reservar item <span id="rOs" style="color:var(--muted);font-weight:normal;"></span></h3>
+    <p style="color:var(--muted);margin:0;">O item fica travado pra você até você lançar o pedido ou desfazer a reserva.</p>
     <label>Sua senha (4 dígitos)</label>
     <input type="password" maxlength="4" id="pinReservar" placeholder="••••">
     <div class="msg" id="msgReservar"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovReservar')">Cancelar</button>
-      <button class="primary" onclick="confirmarReserva()">Salvar</button>
+      <button class="primary" onclick="confirmarReserva()">Reservar</button>
     </div>
   </div>
 </div>
@@ -131,7 +139,7 @@
 <!-- ===== Modal: desfazer reserva ===== -->
 <div class="overlay" id="ovDesfazer">
   <div class="modal">
-    <h3>Desfazer reserva <span id="dPedido" style="color:var(--muted);font-weight:normal;"></span></h3>
+    <h3>Desfazer reserva <span id="dOs" style="color:var(--muted);font-weight:normal;"></span></h3>
     <label>Sua senha (4 dígitos)</label>
     <input type="password" maxlength="4" id="pinDesfazer" placeholder="••••">
     <div class="msg" id="msgDesfazer"></div>
@@ -142,10 +150,10 @@
   </div>
 </div>
 
-<!-- ===== Modal: numero do pedido (gestor) ===== -->
+<!-- ===== Modal: lançar pedido (gestor) ===== -->
 <div class="overlay" id="ovPedido">
   <div class="modal">
-    <h3>Lançar nº do pedido <span id="pPedidoLabel" style="color:var(--muted);font-weight:normal;"></span></h3>
+    <h3>Lançar nº do pedido <span id="pOs" style="color:var(--muted);font-weight:normal;"></span></h3>
     <label>Número do pedido</label>
     <input type="text" id="numPedidoInput" placeholder="Ex: 480123">
     <label>Sua senha (4 dígitos)</label>
@@ -158,22 +166,34 @@
   </div>
 </div>
 
-<!-- ===== Modal: ADM login (genérico p/ ações admin) ===== -->
+<!-- ===== Modal: ADM genérico (converter / separar / encerrar / finalizar) ===== -->
 <div class="overlay" id="ovAdmAction">
   <div class="modal">
     <h3 id="admActionTitle">Ação ADM</h3>
+    <p id="admActionDesc" style="color:var(--muted);margin:0;"></p>
     <div id="admActionExtra"></div>
     <label>PIN do ADM</label>
     <input type="password" maxlength="10" id="pinAdmAction" placeholder="••••">
     <div class="msg" id="msgAdmAction"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovAdmAction')">Cancelar</button>
-      <button class="primary" id="btnAdmActionConfirm">Salvar</button>
+      <button class="primary" id="btnAdmActionConfirm">Confirmar</button>
     </div>
   </div>
 </div>
 
-<!-- ===== Modal: painel ADM (gestores + import) ===== -->
+<!-- ===== Modal: histórico do item ===== -->
+<div class="overlay" id="ovHistorico">
+  <div class="modal">
+    <h3>Histórico <span id="hOs" style="color:var(--muted);font-weight:normal;"></span></h3>
+    <div id="historicoList" style="max-height:340px;overflow:auto;"></div>
+    <div class="modal-actions">
+      <button onclick="closeModal('ovHistorico')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: painel ADM (gestores) ===== -->
 <div class="overlay" id="ovAdmin">
   <div class="modal" style="width:420px;">
     <h3>Área do ADM</h3>
@@ -206,31 +226,37 @@
 
 <script>
 /* ==================== CONFIGURAÇÃO ==================== */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBEtaCXQSKQDZd0fTLybSJtX-gK6_X42HMmcTvLGPHxAfiYzwq9cdaHtYOOiDQOez5/exec'; // ex: https://script.google.com/macros/s/XXX/exec
-const LS_PREFIX = 'portalDanificados_'; // prefixo único p/ não colidir com outros portais no mesmo domínio
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBEtaCXQSKQDZd0fTLybSJtX-gK6_X42HMmcTvLGPHxAfiYzwq9cdaHtYOOiDQOez5/exec';
+const LS_PREFIX = 'portalDanificados_';
 
 const HEADERS = [
-  'PEDIDO','OS','OS2','FABRICANTE','STATUS','DESCRICAO','COD','BTUS',
+  'PEDIDO','OS','OS2','FABRICANTE','STATUS_ITEM','DESCRICAO','COD','BTUS',
   'NF_FABRICA','PRECO_CUSTO','PRECO_VENDA2','PCT_DESCONTO','LIQUIDACAO',
   'SETOR','FOTOS','DEFEITO',
-  'RESERVADO','RESERVADO_POR','CONVERTER_OS',
-  'COD_DANIFICADO_CONVERTIDO','NUM_PEDIDO','STATUS_RESERVA'
+  'STATUS','RESERVADO_POR','COD_DANIFICADO_CONVERTIDO','NUM_PEDIDO','ATUALIZADO_EM'
 ];
 const LABELS = {
-  PEDIDO:'Pedido', OS:'OS', OS2:'OS2', FABRICANTE:'Fabricante', STATUS:'Status Item',
+  PEDIDO:'Pedido', OS:'OS', OS2:'OS2', FABRICANTE:'Fabricante', STATUS_ITEM:'Status Item',
   DESCRICAO:'Descrição', COD:'Cód', BTUS:'BTUs', NF_FABRICA:'NF Fábrica',
   PRECO_CUSTO:'Preço Custo', PRECO_VENDA2:'Preço Venda', PCT_DESCONTO:'% Desconto',
   LIQUIDACAO:'Liquidação', SETOR:'Setor', FOTOS:'Fotos', DEFEITO:'Defeito',
-  RESERVADO:'Reservado', RESERVADO_POR:'Reservado Por', CONVERTER_OS:'Converter OS',
-  COD_DANIFICADO_CONVERTIDO:'Cód. Danificado', NUM_PEDIDO:'Nº Pedido', STATUS_RESERVA:'Status'
+  STATUS:'Status', RESERVADO_POR:'Reservado Por', COD_DANIFICADO_CONVERTIDO:'Cód. Danificado',
+  NUM_PEDIDO:'Nº Pedido', ATUALIZADO_EM:'Atualizado Em'
 };
-// colunas numéricas/monetárias/percentuais -> usadas pra ordenar corretamente
 const NUMERIC_COLS = new Set(['OS','OS2','COD','BTUS','PRECO_CUSTO','PRECO_VENDA2','PCT_DESCONTO','LIQUIDACAO']);
 const DEFAULT_VISIBLE = HEADERS.slice();
 
+const STATUS_FLOW = ['Disponível','Reservado','Convertido','Pedido Lançado','Separação Solicitada','OS Encerrada','Finalizado'];
+const STATUS_CLASS = {
+  'Disponível':'st-disponivel', 'Reservado':'st-reservado', 'Convertido':'st-convertido',
+  'Pedido Lançado':'st-pedidolancado', 'Separação Solicitada':'st-separacaosolicitada',
+  'OS Encerrada':'st-osencerrada', 'Finalizado':'st-finalizado'
+};
+
 let RAW_ROWS = [];
-let FILTERS = {};       // { coluna: textoDeBusca }
+let FILTERS = {};
 let GLOBAL_SEARCH = '';
+let STATUS_FILTER = null; // filtro rápido por chip de status
 let SORT = { col: null, dir: 'asc' };
 let VISIBLE_COLS = JSON.parse(localStorage.getItem(LS_PREFIX+'cols') || 'null') || DEFAULT_VISIBLE.slice();
 let currentAction = null; // OS do item em contexto no modal atual
@@ -247,7 +273,7 @@ async function apiGet(action, params={}){
 async function apiPost(action, payload){
   const res = await fetch(APPS_SCRIPT_URL, {
     method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'}, // evita preflight CORS
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({action, payload})
   });
   return res.json();
@@ -261,10 +287,27 @@ async function loadData(){
     if(!data.ok) throw new Error(data.error || 'Erro ao carregar');
     RAW_ROWS = data.rows;
     document.getElementById('resumo').textContent = RAW_ROWS.length + ' itens carregados';
+    renderStatusChips();
     renderTable();
   }catch(err){
     document.querySelector('.table-wrap').innerHTML = '<div class="loading">Erro ao carregar: '+err.message+'<br><small>Confira se APPS_SCRIPT_URL está configurada no código.</small></div>';
   }
+}
+
+/* ==================== CHIPS DE STATUS (atalho de filtro) ==================== */
+function renderStatusChips(){
+  const box = document.getElementById('statusChips');
+  const counts = {};
+  STATUS_FLOW.forEach(s=>counts[s]=0);
+  RAW_ROWS.forEach(r=>{ const s = r.STATUS || 'Disponível'; counts[s] = (counts[s]||0)+1; });
+  box.innerHTML = STATUS_FLOW.map(s=>`
+    <div class="chip ${STATUS_FILTER===s?'active':''}" onclick="toggleStatusChip('${s}')">${s} (${counts[s]||0})</div>
+  `).join('');
+}
+function toggleStatusChip(s){
+  STATUS_FILTER = STATUS_FILTER === s ? null : s;
+  renderStatusChips();
+  renderTable();
 }
 
 /* ==================== FILTROS / BUSCA / ORDENAÇÃO ==================== */
@@ -278,11 +321,8 @@ function numericValue(col, val){
   if(val===undefined || val===null || val==='') return null;
   if(typeof val === 'number') return val;
   let s = String(val).trim();
-  // remove símbolo de moeda/percentual e normaliza separador decimal BR (1.234,56 -> 1234.56)
   s = s.replace(/R\$\s?/i,'').replace(/%/g,'').trim();
-  if(s.includes(',') ){
-    s = s.replace(/\./g,'').replace(',', '.');
-  }
+  if(s.includes(',')){ s = s.replace(/\./g,'').replace(',', '.'); }
   const n = parseFloat(s);
   return isNaN(n) ? null : n;
 }
@@ -296,6 +336,9 @@ function applyFilters(rows){
       return val.toLowerCase().includes(f.toLowerCase());
     });
   });
+  if(STATUS_FILTER){
+    out = out.filter(r => (r.STATUS || 'Disponível') === STATUS_FILTER);
+  }
   if(GLOBAL_SEARCH){
     const term = GLOBAL_SEARCH.toLowerCase();
     out = out.filter(r => HEADERS.some(col=>{
@@ -315,7 +358,7 @@ function applySort(rows){
     if(isNum){
       va = numericValue(col, va); vb = numericValue(col, vb);
       if(va===null && vb===null) return 0;
-      if(va===null) return 1; // vazios vão pro fim
+      if(va===null) return 1;
       if(vb===null) return -1;
       return (va - vb) * dir;
     }
@@ -329,11 +372,8 @@ function applySort(rows){
 
 function setFilter(col, val){ FILTERS[col] = val || null; renderTable(); }
 function setSort(col){
-  if(SORT.col === col){
-    SORT.dir = SORT.dir === 'asc' ? 'desc' : 'asc';
-  } else {
-    SORT.col = col; SORT.dir = 'asc';
-  }
+  if(SORT.col === col){ SORT.dir = SORT.dir === 'asc' ? 'desc' : 'asc'; }
+  else { SORT.col = col; SORT.dir = 'asc'; }
   renderTable();
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
@@ -343,8 +383,9 @@ document.getElementById('globalSearch').addEventListener('input', (e)=>{
   renderTable();
 });
 document.getElementById('btnClearFilters').onclick = ()=>{
-  FILTERS = {}; GLOBAL_SEARCH = ''; SORT = {col:null, dir:'asc'};
+  FILTERS = {}; GLOBAL_SEARCH = ''; SORT = {col:null, dir:'asc'}; STATUS_FILTER = null;
   document.getElementById('globalSearch').value = '';
+  renderStatusChips();
   renderTable();
 };
 
@@ -391,30 +432,35 @@ function renderTable(){
 function renderCell(col, r){
   const v = r[col];
   if(col === 'FOTOS' && v) return `<a href="${escapeHtml(v)}" target="_blank">ver fotos</a>`;
-  if(col === 'RESERVADO') return v==='Sim' ? '<span class="badge sim">Sim</span>' : '<span class="badge nao">Não</span>';
-  if(col === 'CONVERTER_OS') return v==='Sim' ? '<span class="badge sim">Sim</span>' : '<span class="badge nao">Não</span>';
-  if(col === 'STATUS_RESERVA'){
-    if(v==='Finalizado') return '<span class="badge finalizado">Finalizado</span>';
-    if(v==='Aberto') return '<span class="badge aberto">Aberto</span>';
-    return '';
+  if(col === 'STATUS'){
+    const s = v || 'Disponível';
+    return `<span class="badge ${STATUS_CLASS[s]||''}">${escapeHtml(s)}</span>`;
   }
+  if(col === 'ATUALIZADO_EM' && v) return escapeHtml(new Date(v).toLocaleString('pt-BR'));
   return v===undefined||v===null ? '' : escapeHtml(String(v));
 }
 
-// Identificador único de cada linha é a coluna OS (PEDIDO pode se repetir)
+// OS é o identificador único de cada linha
 function renderAcoes(r){
   const os = r.OS;
-  let btns = '';
-  if(r.RESERVADO !== 'Sim'){
+  const status = r.STATUS || 'Disponível';
+  let btns = `<button class="small" onclick="abrirHistorico('${os}')">Histórico</button>`;
+
+  if(status === 'Disponível'){
     btns += `<button class="small primary" onclick="abrirReservar('${os}')">Reservar</button>`;
-  } else {
+  } else if(status === 'Reservado'){
     btns += `<button class="small danger" onclick="abrirDesfazer('${os}')">Desfazer</button>`;
-    btns += `<button class="small" onclick="abrirAdmConverter('${os}')">ADM: Cód.</button>`;
-    if(r.COD_DANIFICADO_CONVERTIDO){
-      btns += `<button class="small" onclick="abrirNumPedido('${os}')">Nº Pedido</button>`;
-    }
-    btns += `<button class="small" onclick="abrirAdmStatus('${os}')">ADM: Status</button>`;
+    btns += `<button class="small" onclick="abrirAdmConverter('${os}')">ADM: Converter</button>`;
+  } else if(status === 'Convertido'){
+    btns += `<button class="small primary" onclick="abrirNumPedido('${os}')">Lançar Pedido</button>`;
+  } else if(status === 'Pedido Lançado'){
+    btns += `<button class="small" onclick="abrirAdmSimples('${os}', 'solicitarSeparacao', 'Solicitar Separação', 'Solicita o encerramento da OS e a separação do item pra distribuição.')">ADM: Solicitar Separação</button>`;
+  } else if(status === 'Separação Solicitada'){
+    btns += `<button class="small" onclick="abrirAdmSimples('${os}', 'confirmarOsEncerrada', 'Confirmar OS Encerrada', 'Confirma que a OS foi encerrada e o item separado.')">ADM: Confirmar OS Encerrada</button>`;
+  } else if(status === 'OS Encerrada'){
+    btns += `<button class="small primary" onclick="abrirAdmSimples('${os}', 'finalizar', 'Finalizar', 'Marca o item como finalizado — pedido atendido.')">ADM: Finalizar</button>`;
   }
+  // Finalizado: só mostra Histórico
   return btns;
 }
 
@@ -456,17 +502,13 @@ function toast(text, ok=true){
 /* ==================== RESERVAR ==================== */
 function abrirReservar(os){
   currentAction = os;
-  document.getElementById('rPedido').textContent = 'OS #'+os;
-  document.getElementById('chkReservar').checked = true;
-  document.getElementById('chkConverter').checked = false;
+  document.getElementById('rOs').textContent = 'OS #'+os;
   openModal('ovReservar');
 }
 async function confirmarReserva(){
-  const reservar = document.getElementById('chkReservar').checked;
-  const converter = document.getElementById('chkConverter').checked;
   const pin = document.getElementById('pinReservar').value.trim();
   if(pin.length !== 4){ showMsg('msgReservar','Digite os 4 dígitos do seu PIN.', false); return; }
-  const res = await apiPost('reservar', {os: currentAction, reservar, converter, pin});
+  const res = await apiPost('reservar', {os: currentAction, pin});
   if(res.ok){ toast('Reservado para '+res.gestor+'!'); closeModal('ovReservar'); loadData(); }
   else showMsg('msgReservar', res.error, false);
 }
@@ -474,7 +516,7 @@ async function confirmarReserva(){
 /* ==================== DESFAZER RESERVA ==================== */
 function abrirDesfazer(os){
   currentAction = os;
-  document.getElementById('dPedido').textContent = 'OS #'+os;
+  document.getElementById('dOs').textContent = 'OS #'+os;
   openModal('ovDesfazer');
 }
 async function confirmarDesfazer(){
@@ -485,10 +527,10 @@ async function confirmarDesfazer(){
   else showMsg('msgDesfazer', res.error, false);
 }
 
-/* ==================== Nº PEDIDO (gestor) ==================== */
+/* ==================== LANÇAR PEDIDO (gestor) ==================== */
 function abrirNumPedido(os){
   currentAction = os;
-  document.getElementById('pPedidoLabel').textContent = 'OS #'+os;
+  document.getElementById('pOs').textContent = 'OS #'+os;
   openModal('ovPedido');
 }
 async function confirmarNumPedido(){
@@ -496,15 +538,16 @@ async function confirmarNumPedido(){
   const pin = document.getElementById('pinPedido').value.trim();
   if(!numPedido){ showMsg('msgPedido','Informe o número do pedido.', false); return; }
   if(pin.length !== 4){ showMsg('msgPedido','Digite os 4 dígitos do seu PIN.', false); return; }
-  const res = await apiPost('salvarNumPedido', {os: currentAction, numPedido, pin});
+  const res = await apiPost('lancarPedido', {os: currentAction, numPedido, pin});
   if(res.ok){ toast('Nº do pedido salvo!'); closeModal('ovPedido'); loadData(); }
   else showMsg('msgPedido', res.error, false);
 }
 
-/* ==================== AÇÕES ADM (converter código / status) ==================== */
+/* ==================== AÇÕES ADM ==================== */
 function abrirAdmConverter(os){
   currentAction = os;
-  document.getElementById('admActionTitle').textContent = 'ADM: Cód. Danificado Convertido — OS #'+os;
+  document.getElementById('admActionTitle').textContent = 'ADM: Converter — OS #'+os;
+  document.getElementById('admActionDesc').textContent = 'Grava o código danificado convertido e avança o item pra fase "Convertido".';
   document.getElementById('admActionExtra').innerHTML = `
     <label>Código danificado convertido</label>
     <input type="text" id="admConverterValue" placeholder="Ex: DAN-00123">`;
@@ -512,30 +555,42 @@ function abrirAdmConverter(os){
     const codConvertido = document.getElementById('admConverterValue').value.trim();
     const admPin = document.getElementById('pinAdmAction').value.trim();
     if(!codConvertido){ showMsg('msgAdmAction','Informe o código.', false); return; }
-    const res = await apiPost('admSetConversao', {os: currentAction, codConvertido, admPin});
-    if(res.ok){ toast('Código convertido salvo!'); closeModal('ovAdmAction'); loadData(); }
+    const res = await apiPost('converter', {os: currentAction, codConvertido, admPin});
+    if(res.ok){ toast('Item convertido!'); closeModal('ovAdmAction'); loadData(); }
     else showMsg('msgAdmAction', res.error, false);
   };
   openModal('ovAdmAction');
 }
 
-function abrirAdmStatus(os){
+// Ações ADM que só precisam do PIN pra confirmar (sem campo extra)
+function abrirAdmSimples(os, action, titulo, descricao){
   currentAction = os;
-  document.getElementById('admActionTitle').textContent = 'ADM: Status — OS #'+os;
-  document.getElementById('admActionExtra').innerHTML = `
-    <label>Status</label>
-    <select id="admStatusValue" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);">
-      <option value="Aberto">Aberto</option>
-      <option value="Finalizado">Finalizado</option>
-    </select>`;
+  document.getElementById('admActionTitle').textContent = 'ADM: ' + titulo + ' — OS #' + os;
+  document.getElementById('admActionDesc').textContent = descricao;
+  document.getElementById('admActionExtra').innerHTML = '';
   document.getElementById('btnAdmActionConfirm').onclick = async ()=>{
-    const status = document.getElementById('admStatusValue').value;
     const admPin = document.getElementById('pinAdmAction').value.trim();
-    const res = await apiPost('admSetStatus', {os: currentAction, status, admPin});
-    if(res.ok){ toast('Status atualizado!'); closeModal('ovAdmAction'); loadData(); }
+    const res = await apiPost(action, {os: currentAction, admPin});
+    if(res.ok){ toast(titulo + ' — feito!'); closeModal('ovAdmAction'); loadData(); }
     else showMsg('msgAdmAction', res.error, false);
   };
   openModal('ovAdmAction');
+}
+
+/* ==================== HISTÓRICO ==================== */
+async function abrirHistorico(os){
+  document.getElementById('hOs').textContent = 'OS #'+os;
+  document.getElementById('historicoList').innerHTML = '<div style="color:var(--muted)">Carregando...</div>';
+  openModal('ovHistorico');
+  const res = await apiGet('getHistorico', {os});
+  const box = document.getElementById('historicoList');
+  if(!res.ok || !res.historico.length){ box.innerHTML = '<div style="color:var(--muted)">Nenhum evento registrado ainda.</div>'; return; }
+  box.innerHTML = res.historico.map(h=>`
+    <div class="histItem">
+      <div><b>${escapeHtml(h.acao)}</b> — ${escapeHtml(h.de||'-')} → ${escapeHtml(h.para||'-')}</div>
+      <div class="when">${new Date(h.data).toLocaleString('pt-BR')} · ${escapeHtml(h.quem||'')}</div>
+    </div>
+  `).join('');
 }
 
 /* ==================== PAINEL ADM (gestores) ==================== */
@@ -591,7 +646,6 @@ document.getElementById('fileInput').onchange = async (e)=>{
   const rows = parseCSV(text);
   if(!rows.length){ toast('Nenhuma linha válida encontrada no CSV.', false); return; }
 
-  // envia em blocos de 200 linhas
   const CHUNK = 200;
   let inseridas=0, atualizadas=0, ignoradas=0;
   for(let i=0;i<rows.length;i+=CHUNK){
@@ -605,42 +659,32 @@ document.getElementById('fileInput').onchange = async (e)=>{
   e.target.value = '';
 };
 
-// Lê o arquivo tentando UTF-8 primeiro; se os bytes não formarem UTF-8 válido
-// (comum em CSV exportado do Excel no Brasil, que usa Windows-1252/ISO-8859-1),
-// refaz a leitura nessa codificação pra não corromper acentos.
 async function readFileSmart(file){
   const buffer = await file.arrayBuffer();
-  try{
-    return new TextDecoder('utf-8', {fatal:true}).decode(buffer);
-  }catch(e){
-    return new TextDecoder('windows-1252').decode(buffer);
-  }
+  try{ return new TextDecoder('utf-8', {fatal:true}).decode(buffer); }
+  catch(e){ return new TextDecoder('windows-1252').decode(buffer); }
 }
 
-// Remove acentos, espaços e símbolos dos cabeçalhos, pra casar com os nomes internos
-// (ex: "DESCRIÇÃO" -> "DESCRICAO", "PREÇO CUSTO" -> "PRECO_CUSTO", "% desconto" -> "PCT_DESCONTO")
 function normalizeHeader(h){
   return h
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toUpperCase()
     .replace(/%/g, 'PCT')
     .replace(/[^A-Z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
 }
-
-// Casos em que o nome normalizado ainda não bate 100% com o nome interno usado no sistema
 const HEADER_ALIASES = {
   'PRECO_DE_VENDA2': 'PRECO_VENDA2',
   'PRECO_DE_VENDA_2': 'PRECO_VENDA2',
   'PRECO_VENDA_2': 'PRECO_VENDA2',
   'PRECO_DE_VENDA': 'PRECO_VENDA2',
   'NF_FABRICA_': 'NF_FABRICA',
-  'NF_FABRICANTE': 'NF_FABRICA'
+  'NF_FABRICANTE': 'NF_FABRICA',
+  'STATUS': 'STATUS_ITEM' // no CSV original "STATUS" é o status do item (ABERTO), não a fase do processo
 };
 
 function parseCSV(text){
-  // parser simples com suporte a aspas e ; ou , como separador
   const sep = text.split('\n')[0].includes(';') ? ';' : ',';
   const lines = text.replace(/\r/g,'').split('\n').filter(l=>l.trim().length);
   if(!lines.length) return [];
