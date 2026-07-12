@@ -329,7 +329,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwBEtaCXQSKQDZd
 const LS_PREFIX = 'portalDanificados_';
 
 const HEADERS = [
-  'PEDIDO','OS','OS2','FABRICANTE','STATUS_ITEM','DESCRICAO','COD','BTUS',
+  'PEDIDO','OS','OS2','FABRICANTE','DESCRICAO','STATUS_ITEM','COD','BTUS',
   'NF_FABRICA','PRECO_CUSTO','PRECO_VENDA2','PCT_DESCONTO','LIQUIDACAO',
   'SETOR','FOTOS','DEFEITO',
   'STATUS','RESERVADO_POR','COD_DANIFICADO_CONVERTIDO','NUM_PEDIDO','ATUALIZADO_EM'
@@ -354,6 +354,11 @@ const STATUS_CLASS = {
 // Colunas que o visitante (cliente/parceiro instalador) NÃO pode ver
 // (Preço Venda fica liberado pro visitante — só Custo e % Desconto revelam sua margem)
 const RESTRICTED_COLS = new Set(['PRECO_CUSTO','PCT_DESCONTO']);
+// Colunas ocultas pra todo mundo (gestor e visitante) — continuam pesquisáveis na busca geral,
+// só não aparecem na tabela nem no seletor de "Colunas"
+const ALWAYS_HIDDEN_COLS = new Set(['PEDIDO','OS2','NF_FABRICA']);
+// Colunas "congeladas" à esquerda (ficam fixas ao rolar a tabela pra o lado), com largura fixa em px
+const STICKY_WIDTHS = { OS: 80, FABRICANTE: 120, DESCRICAO: 340 };
 
 let currentGestor = null; // {nome, pin} quando alguém "entra como gestor"; null = modo visitante
 function isGestorMode(){ return !!currentGestor; }
@@ -501,17 +506,33 @@ function renderTable(){
   let rows = applyFilters(RAW_ROWS);
   rows = applySort(rows);
   const gestor = isGestorMode();
-  const cols = HEADERS.filter(h => VISIBLE_COLS.includes(h) && (gestor || !RESTRICTED_COLS.has(h)));
+  const cols = HEADERS.filter(h => VISIBLE_COLS.includes(h) && !ALWAYS_HIDDEN_COLS.has(h) && (gestor || !RESTRICTED_COLS.has(h)));
+
+  // calcula o offset (px) de cada coluna congelada, na ordem em que aparecem
+  let leftAcc = 0;
+  const stickyLeft = {};
+  if(gestor){ stickyLeft['__checkbox__'] = 0; leftAcc = 28; }
+  cols.forEach(c=>{
+    if(STICKY_WIDTHS[c] !== undefined){ stickyLeft[c] = leftAcc; leftAcc += STICKY_WIDTHS[c]; }
+  });
+  function stickyStyle(c, isHeader){
+    if(STICKY_WIDTHS[c] === undefined) return '';
+    const w = STICKY_WIDTHS[c];
+    const bg = isHeader ? 'var(--bg2)' : 'var(--bg)';
+    const z = isHeader ? 6 : 3;
+    const ellipsis = c === 'DESCRICAO' ? 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' : '';
+    return `style="position:sticky;left:${stickyLeft[c]}px;z-index:${z};background:${bg};width:${w}px;min-width:${w}px;max-width:${w}px;${ellipsis}"`;
+  }
 
   let html = '<table><thead><tr>';
   if(gestor){
-    html += `<th class="checkCell"><input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this.checked)"></th>`;
+    html += `<th class="checkCell" style="position:sticky;left:0;z-index:6;background:var(--bg2);"><input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this.checked)"></th>`;
   }
   cols.forEach(c=>{
     const dlId = 'dl_'+c;
     const arrow = SORT.col === c ? (SORT.dir==='asc' ? '▲' : '▼') : '↕';
     const arrowClass = SORT.col === c ? 'sortbtn active' : 'sortbtn';
-    html += `<th>
+    html += `<th ${stickyStyle(c, true)}>
       <div class="th-top">
         <span class="colname">${LABELS[c]||c}</span>
         <button class="${arrowClass}" title="Ordenar" onclick="setSort('${c}')">${arrow}</button>
@@ -529,10 +550,11 @@ function renderTable(){
     const os = String(r.OS);
     html += '<tr>';
     if(gestor){
-      html += `<td class="checkCell"><input type="checkbox" ${SELECTED.has(os)?'checked':''} onchange="toggleSelect('${os}', this.checked)"></td>`;
+      html += `<td class="checkCell" style="position:sticky;left:0;z-index:3;background:var(--bg);"><input type="checkbox" ${SELECTED.has(os)?'checked':''} onchange="toggleSelect('${os}', this.checked)"></td>`;
     }
     cols.forEach(c=>{
-      html += `<td>${renderCell(c, r)}</td>`;
+      const title = c === 'DESCRICAO' ? `title="${escapeHtml(String(r[c]||''))}"` : '';
+      html += `<td ${stickyStyle(c, false)} ${title}>${renderCell(c, r)}</td>`;
     });
     html += `<td class="acoes">${renderAcoes(r)}</td>`;
     html += '</tr>';
@@ -769,7 +791,7 @@ async function restaurarSessaoGestor(){
 document.getElementById('btnCols').onclick = ()=>{
   const box = document.getElementById('colPicker');
   const gestor = isGestorMode();
-  box.innerHTML = HEADERS.filter(h => gestor || !RESTRICTED_COLS.has(h)).map(h=>`
+  box.innerHTML = HEADERS.filter(h => !ALWAYS_HIDDEN_COLS.has(h) && (gestor || !RESTRICTED_COLS.has(h))).map(h=>`
     <label><input type="checkbox" value="${h}" ${VISIBLE_COLS.includes(h)?'checked':''}> ${LABELS[h]||h}</label>
   `).join('');
   openModal('ovCols');
@@ -1019,7 +1041,8 @@ function splitCsvLine(line, sep){
 document.getElementById('btnExport').onclick = ()=>{
   let rows = applyFilters(RAW_ROWS);
   rows = applySort(rows);
-  const cols = HEADERS.filter(h => VISIBLE_COLS.includes(h));
+  const gestor = isGestorMode();
+  const cols = HEADERS.filter(h => VISIBLE_COLS.includes(h) && !ALWAYS_HIDDEN_COLS.has(h) && (gestor || !RESTRICTED_COLS.has(h)));
   const data = rows.map(r=>{
     const obj = {};
     cols.forEach(c=> obj[LABELS[c]||c] = r[c]);
