@@ -82,6 +82,14 @@
   .histItem{border-left:2px solid var(--border);padding:4px 0 4px 10px;margin-bottom:4px;font-size:11.5px;}
   .histItem b{color:var(--accent2);}
   .histItem .when{color:var(--muted);font-size:10.5px;}
+  .selectionBar{display:none;align-items:center;gap:10px;flex-wrap:wrap;background:#ff8a3d14;
+    border:1px solid var(--accent);border-radius:8px;padding:10px 14px;margin:0 20px 8px;}
+  .selectionBar b{color:var(--accent2);}
+  .checkCell{width:28px;text-align:center;}
+  .resultList{max-height:260px;overflow:auto;}
+  .resultRow{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);font-size:11.5px;}
+  .resultRow.ok{color:var(--green);}
+  .resultRow.fail{color:var(--red);}
 </style>
 </head>
 <body>
@@ -95,6 +103,7 @@
     <button id="btnExport">Exportar Excel</button>
     <button id="btnAdmin">Área ADM</button>
     <button id="btnRefresh">Atualizar</button>
+    <button id="btnModoGestor" class="primary">Entrar como Gestor</button>
     <input type="file" id="fileInput" accept=".csv" style="display:none">
   </div>
 </header>
@@ -104,6 +113,7 @@
   <small id="globalSearchCount"></small>
 </div>
 <div class="statusChips" id="statusChips"></div>
+<div class="selectionBar" id="selectionBar"></div>
 
 <main>
   <div class="table-wrap"><div class="loading">Carregando dados...</div></div>
@@ -222,6 +232,95 @@
   </div>
 </div>
 
+<!-- ===== Modal: reservar em lote ===== -->
+<div class="overlay" id="ovBulkReservar">
+  <div class="modal">
+    <h3>Reservar <span id="bReservarCount"></span> itens</h3>
+    <label>Sua senha (4 dígitos)</label>
+    <input type="password" maxlength="4" id="pinBulkReservar" placeholder="••••">
+    <div class="msg" id="msgBulkReservar"></div>
+    <div class="modal-actions">
+      <button onclick="closeModal('ovBulkReservar')">Cancelar</button>
+      <button class="primary" onclick="confirmarBulkReservar()">Reservar todos</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: lançar pedido em lote ===== -->
+<div class="overlay" id="ovBulkPedido">
+  <div class="modal">
+    <h3>Lançar pedido em <span id="bPedidoCount"></span> itens</h3>
+    <p style="color:var(--muted);margin:0;">Use quando o mesmo pedido cobre várias máquinas.</p>
+    <label>Número do pedido</label>
+    <input type="text" id="numPedidoBulkInput" placeholder="Ex: 480123">
+    <label>Sua senha (4 dígitos)</label>
+    <input type="password" maxlength="4" id="pinBulkPedido" placeholder="••••">
+    <div class="msg" id="msgBulkPedido"></div>
+    <div class="modal-actions">
+      <button onclick="closeModal('ovBulkPedido')">Cancelar</button>
+      <button class="primary" onclick="confirmarBulkPedido()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: converter em lote (ADM) ===== -->
+<div class="overlay" id="ovBulkConverter">
+  <div class="modal">
+    <h3>ADM: Converter <span id="bConverterCount"></span> itens</h3>
+    <p style="color:var(--muted);margin:0;">O código de cada item vira o prefixo + o número da OS (garante que fica único). Deixe o prefixo em branco pra usar só o número da OS.</p>
+    <label>Prefixo (opcional)</label>
+    <input type="text" id="prefixoBulkConverter" placeholder="Ex: DAN-">
+    <label>PIN do ADM</label>
+    <input type="password" maxlength="10" id="pinBulkConverter" placeholder="••••">
+    <div class="msg" id="msgBulkConverter"></div>
+    <div class="modal-actions">
+      <button onclick="closeModal('ovBulkConverter')">Cancelar</button>
+      <button class="primary" onclick="confirmarBulkConverter()">Converter todos</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: ação ADM simples em lote (separação / encerrar / finalizar) ===== -->
+<div class="overlay" id="ovBulkAdmSimples">
+  <div class="modal">
+    <h3 id="bulkAdmTitle">Ação ADM em lote</h3>
+    <p id="bulkAdmDesc" style="color:var(--muted);margin:0;"></p>
+    <label>PIN do ADM</label>
+    <input type="password" maxlength="10" id="pinBulkAdmSimples" placeholder="••••">
+    <div class="msg" id="msgBulkAdmSimples"></div>
+    <div class="modal-actions">
+      <button onclick="closeModal('ovBulkAdmSimples')">Cancelar</button>
+      <button class="primary" id="btnBulkAdmSimplesConfirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: resultado da ação em lote ===== -->
+<div class="overlay" id="ovBulkResultado">
+  <div class="modal">
+    <h3 id="bulkResultadoTitle">Resultado</h3>
+    <div class="resultList" id="bulkResultadoList"></div>
+    <div class="modal-actions">
+      <button class="primary" onclick="closeModal('ovBulkResultado')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: entrar como gestor ===== -->
+<div class="overlay" id="ovModoGestor">
+  <div class="modal">
+    <h3>Entrar como Gestor</h3>
+    <p style="color:var(--muted);margin:0;">Destrava reservar itens, colunas de preço e as ações administrativas.</p>
+    <label>Sua senha (4 dígitos)</label>
+    <input type="password" maxlength="4" id="pinModoGestor" placeholder="••••">
+    <div class="msg" id="msgModoGestor"></div>
+    <div class="modal-actions">
+      <button onclick="closeModal('ovModoGestor')">Cancelar</button>
+      <button class="primary" onclick="confirmarModoGestor()">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -252,6 +351,12 @@ const STATUS_CLASS = {
   'Pedido Lançado':'st-pedidolancado', 'Separação Solicitada':'st-separacaosolicitada',
   'OS Encerrada':'st-osencerrada', 'Finalizado':'st-finalizado'
 };
+// Colunas que o visitante (cliente/parceiro instalador) NÃO pode ver
+// (Preço Venda fica liberado pro visitante — só Custo e % Desconto revelam sua margem)
+const RESTRICTED_COLS = new Set(['PRECO_CUSTO','PCT_DESCONTO']);
+
+let currentGestor = null; // {nome, pin} quando alguém "entra como gestor"; null = modo visitante
+function isGestorMode(){ return !!currentGestor; }
 
 let RAW_ROWS = [];
 let FILTERS = {};
@@ -261,6 +366,7 @@ let SORT = { col: null, dir: 'asc' };
 let VISIBLE_COLS = JSON.parse(localStorage.getItem(LS_PREFIX+'cols') || 'null') || DEFAULT_VISIBLE.slice();
 let currentAction = null; // OS do item em contexto no modal atual
 let admSessionPin = null;
+let SELECTED = new Set(); // OS selecionadas pra ações em lote
 
 /* ==================== API ==================== */
 async function apiGet(action, params={}){
@@ -282,6 +388,7 @@ async function apiPost(action, payload){
 /* ==================== CARREGAR DADOS ==================== */
 async function loadData(){
   document.querySelector('.table-wrap').innerHTML = '<div class="loading">Carregando dados...</div>';
+  SELECTED.clear();
   try{
     const data = await apiGet('getData');
     if(!data.ok) throw new Error(data.error || 'Erro ao carregar');
@@ -393,9 +500,13 @@ document.getElementById('btnClearFilters').onclick = ()=>{
 function renderTable(){
   let rows = applyFilters(RAW_ROWS);
   rows = applySort(rows);
-  const cols = HEADERS.filter(h => VISIBLE_COLS.includes(h));
+  const gestor = isGestorMode();
+  const cols = HEADERS.filter(h => VISIBLE_COLS.includes(h) && (gestor || !RESTRICTED_COLS.has(h)));
 
   let html = '<table><thead><tr>';
+  if(gestor){
+    html += `<th class="checkCell"><input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this.checked)"></th>`;
+  }
   cols.forEach(c=>{
     const dlId = 'dl_'+c;
     const arrow = SORT.col === c ? (SORT.dir==='asc' ? '▲' : '▼') : '↕';
@@ -415,7 +526,11 @@ function renderTable(){
   html += '<th>Ações</th></tr></thead><tbody>';
 
   rows.forEach(r=>{
+    const os = String(r.OS);
     html += '<tr>';
+    if(gestor){
+      html += `<td class="checkCell"><input type="checkbox" ${SELECTED.has(os)?'checked':''} onchange="toggleSelect('${os}', this.checked)"></td>`;
+    }
     cols.forEach(c=>{
       html += `<td>${renderCell(c, r)}</td>`;
     });
@@ -427,6 +542,7 @@ function renderTable(){
   document.querySelector('.table-wrap').innerHTML = html;
   document.getElementById('resumo').textContent = rows.length + ' de ' + RAW_ROWS.length + ' itens';
   document.getElementById('globalSearchCount').textContent = GLOBAL_SEARCH ? (rows.length + ' resultado(s)') : '';
+  renderSelectionBar();
 }
 
 function renderCell(col, r){
@@ -443,8 +559,11 @@ function renderCell(col, r){
 // OS é o identificador único de cada linha
 function renderAcoes(r){
   const os = r.OS;
+  const historico = `<button class="small" onclick="abrirHistorico('${os}')">Histórico</button>`;
+  if(!isGestorMode()) return historico; // visitante só vê o histórico, sem ações
+
   const status = r.STATUS || 'Disponível';
-  let btns = `<button class="small" onclick="abrirHistorico('${os}')">Histórico</button>`;
+  let btns = historico;
 
   if(status === 'Disponível'){
     btns += `<button class="small primary" onclick="abrirReservar('${os}')">Reservar</button>`;
@@ -460,14 +579,197 @@ function renderAcoes(r){
   } else if(status === 'OS Encerrada'){
     btns += `<button class="small primary" onclick="abrirAdmSimples('${os}', 'finalizar', 'Finalizar', 'Marca o item como finalizado — pedido atendido.')">ADM: Finalizar</button>`;
   }
-  // Finalizado: só mostra Histórico
+  // Finalizado: só Histórico
   return btns;
+}
+
+/* ==================== SELEÇÃO EM LOTE ==================== */
+function toggleSelect(os, checked){
+  if(checked) SELECTED.add(os); else SELECTED.delete(os);
+  renderSelectionBar();
+  const chk = document.getElementById('selectAllChk');
+  if(chk) chk.checked = false;
+}
+function toggleSelectAll(checked){
+  const rows = applySort(applyFilters(RAW_ROWS)); // itens atualmente visíveis (respeitando filtros)
+  rows.forEach(r=>{
+    const os = String(r.OS);
+    if(checked) SELECTED.add(os); else SELECTED.delete(os);
+  });
+  renderTable();
+}
+function limparSelecao(){
+  SELECTED.clear();
+  renderTable();
+}
+function renderSelectionBar(){
+  const box = document.getElementById('selectionBar');
+  if(SELECTED.size === 0){ box.style.display = 'none'; box.innerHTML=''; return; }
+  box.style.display = 'flex';
+
+  const selRows = RAW_ROWS.filter(r => SELECTED.has(String(r.OS)));
+  const statuses = new Set(selRows.map(r => r.STATUS || 'Disponível'));
+
+  let actionsHtml = '';
+  if(statuses.size === 1){
+    const status = [...statuses][0];
+    if(status === 'Disponível'){
+      actionsHtml = `<button class="small primary" onclick="abrirBulkReservar()">Reservar</button>`;
+    } else if(status === 'Reservado'){
+      actionsHtml = `<button class="small" onclick="abrirBulkConverter()">ADM: Converter</button>`;
+    } else if(status === 'Convertido'){
+      actionsHtml = `<button class="small primary" onclick="abrirBulkPedido()">Lançar Pedido</button>`;
+    } else if(status === 'Pedido Lançado'){
+      actionsHtml = `<button class="small" onclick="abrirBulkAdmSimples('solicitarSeparacao','Solicitar Separação','Solicita o encerramento da OS e a separação de todos os itens selecionados.')">ADM: Solicitar Separação</button>`;
+    } else if(status === 'Separação Solicitada'){
+      actionsHtml = `<button class="small" onclick="abrirBulkAdmSimples('confirmarOsEncerrada','Confirmar OS Encerrada','Confirma que todas as OS selecionadas foram encerradas e os itens separados.')">ADM: Confirmar OS Encerrada</button>`;
+    } else if(status === 'OS Encerrada'){
+      actionsHtml = `<button class="small primary" onclick="abrirBulkAdmSimples('finalizar','Finalizar','Marca todos os itens selecionados como finalizados.')">ADM: Finalizar</button>`;
+    } else {
+      actionsHtml = `<span style="color:var(--muted)">Nenhuma ação em lote disponível pra "Finalizado".</span>`;
+    }
+  } else {
+    actionsHtml = `<span style="color:var(--muted)">Selecione itens com o mesmo status pra ações em lote (${statuses.size} status diferentes na seleção).</span>`;
+  }
+
+  box.innerHTML = `<b>${SELECTED.size} selecionado(s)</b> ${actionsHtml} <button class="small" onclick="limparSelecao()">Limpar seleção</button>`;
+}
+
+function mostrarResultadoBulk(titulo, res){
+  document.getElementById('bulkResultadoTitle').textContent = titulo + ' — ' + res.sucesso + ' ok, ' + res.falha + ' falharam';
+  const list = document.getElementById('bulkResultadoList');
+  list.innerHTML = res.detalhes.map(d => `
+    <div class="resultRow ${d.ok ? 'ok' : 'fail'}">
+      <span>OS #${escapeHtml(d.os)}</span>
+      <span>${d.ok ? '✓ OK' : '✗ ' + escapeHtml(d.error || 'erro')}</span>
+    </div>
+  `).join('');
+  openModal('ovBulkResultado');
+}
+
+/* ==================== RESERVAR EM LOTE ==================== */
+function abrirBulkReservar(){
+  document.getElementById('bReservarCount').textContent = SELECTED.size;
+  openModal('ovBulkReservar');
+}
+async function confirmarBulkReservar(){
+  const pin = document.getElementById('pinBulkReservar').value.trim();
+  if(pin.length !== 4){ showMsg('msgBulkReservar','Digite os 4 dígitos do seu PIN.', false); return; }
+  const res = await apiPost('bulk', {acao:'reservar', osList: Array.from(SELECTED), pin});
+  if(!res.ok){ showMsg('msgBulkReservar', res.error, false); return; }
+  closeModal('ovBulkReservar');
+  SELECTED.clear();
+  loadData();
+  mostrarResultadoBulk('Reservar', res);
+}
+
+/* ==================== LANÇAR PEDIDO EM LOTE ==================== */
+function abrirBulkPedido(){
+  document.getElementById('bPedidoCount').textContent = SELECTED.size;
+  openModal('ovBulkPedido');
+}
+async function confirmarBulkPedido(){
+  const numPedido = document.getElementById('numPedidoBulkInput').value.trim();
+  const pin = document.getElementById('pinBulkPedido').value.trim();
+  if(!numPedido){ showMsg('msgBulkPedido','Informe o número do pedido.', false); return; }
+  if(pin.length !== 4){ showMsg('msgBulkPedido','Digite os 4 dígitos do seu PIN.', false); return; }
+  const res = await apiPost('bulk', {acao:'lancarPedido', osList: Array.from(SELECTED), numPedido, pin});
+  if(!res.ok){ showMsg('msgBulkPedido', res.error, false); return; }
+  closeModal('ovBulkPedido');
+  SELECTED.clear();
+  loadData();
+  mostrarResultadoBulk('Lançar Pedido', res);
+}
+
+/* ==================== CONVERTER EM LOTE (ADM) ==================== */
+function abrirBulkConverter(){
+  document.getElementById('bConverterCount').textContent = SELECTED.size;
+  openModal('ovBulkConverter');
+}
+async function confirmarBulkConverter(){
+  const prefixo = document.getElementById('prefixoBulkConverter').value.trim();
+  const admPin = document.getElementById('pinBulkConverter').value.trim();
+  if(!admPin){ showMsg('msgBulkConverter','Digite o PIN do ADM.', false); return; }
+  const res = await apiPost('bulk', {acao:'converter', osList: Array.from(SELECTED), prefixo, admPin});
+  if(!res.ok){ showMsg('msgBulkConverter', res.error, false); return; }
+  closeModal('ovBulkConverter');
+  SELECTED.clear();
+  loadData();
+  mostrarResultadoBulk('Converter', res);
+}
+
+/* ==================== AÇÕES ADM SIMPLES EM LOTE ==================== */
+function abrirBulkAdmSimples(acao, titulo, descricao){
+  document.getElementById('bulkAdmTitle').textContent = titulo + ' — ' + SELECTED.size + ' itens';
+  document.getElementById('bulkAdmDesc').textContent = descricao;
+  document.getElementById('btnBulkAdmSimplesConfirm').onclick = async ()=>{
+    const admPin = document.getElementById('pinBulkAdmSimples').value.trim();
+    if(!admPin){ showMsg('msgBulkAdmSimples','Digite o PIN do ADM.', false); return; }
+    const res = await apiPost('bulk', {acao, osList: Array.from(SELECTED), admPin});
+    if(!res.ok){ showMsg('msgBulkAdmSimples', res.error, false); return; }
+    closeModal('ovBulkAdmSimples');
+    SELECTED.clear();
+    loadData();
+    mostrarResultadoBulk(titulo, res);
+  };
+  openModal('ovBulkAdmSimples');
+}
+
+/* ==================== MODO GESTOR / VISITANTE ==================== */
+function updateModeUI(){
+  const gestor = isGestorMode();
+  document.getElementById('btnImport').style.display = gestor ? '' : 'none';
+  document.getElementById('btnAdmin').style.display = gestor ? '' : 'none';
+  const btn = document.getElementById('btnModoGestor');
+  if(gestor){
+    btn.textContent = 'Gestor: ' + currentGestor.nome + ' (sair)';
+    btn.classList.remove('primary');
+  } else {
+    btn.textContent = 'Entrar como Gestor';
+    btn.classList.add('primary');
+  }
+}
+document.getElementById('btnModoGestor').onclick = ()=>{
+  if(isGestorMode()){
+    currentGestor = null;
+    sessionStorage.removeItem(LS_PREFIX+'gestorPin');
+    SELECTED.clear();
+    updateModeUI();
+    renderTable();
+    toast('Você saiu do modo gestor.');
+  } else {
+    openModal('ovModoGestor');
+  }
+};
+async function confirmarModoGestor(){
+  const pin = document.getElementById('pinModoGestor').value.trim();
+  if(pin.length !== 4){ showMsg('msgModoGestor','Digite os 4 dígitos do seu PIN.', false); return; }
+  const res = await apiPost('checkGestorPin', {pin});
+  if(!res.ok){ showMsg('msgModoGestor', res.error, false); return; }
+  currentGestor = { nome: res.nome, pin };
+  sessionStorage.setItem(LS_PREFIX+'gestorPin', pin);
+  closeModal('ovModoGestor');
+  updateModeUI();
+  renderTable();
+  toast('Bem-vindo, ' + res.nome + '!');
+}
+async function restaurarSessaoGestor(){
+  const pin = sessionStorage.getItem(LS_PREFIX+'gestorPin');
+  if(!pin) return;
+  const res = await apiPost('checkGestorPin', {pin});
+  if(res.ok){
+    currentGestor = { nome: res.nome, pin };
+    updateModeUI();
+  } else {
+    sessionStorage.removeItem(LS_PREFIX+'gestorPin');
+  }
 }
 
 /* ==================== SELETOR DE COLUNAS ==================== */
 document.getElementById('btnCols').onclick = ()=>{
   const box = document.getElementById('colPicker');
-  box.innerHTML = HEADERS.map(h=>`
+  const gestor = isGestorMode();
+  box.innerHTML = HEADERS.filter(h => gestor || !RESTRICTED_COLS.has(h)).map(h=>`
     <label><input type="checkbox" value="${h}" ${VISIBLE_COLS.includes(h)?'checked':''}> ${LABELS[h]||h}</label>
   `).join('');
   openModal('ovCols');
@@ -733,7 +1035,8 @@ document.getElementById('btnExport').onclick = ()=>{
 document.getElementById('btnRefresh').onclick = loadData;
 
 /* ==================== INIT ==================== */
-loadData();
+updateModeUI(); // estado inicial: visitante
+restaurarSessaoGestor().then(loadData);
 </script>
 </body>
 </html>
