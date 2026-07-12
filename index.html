@@ -520,8 +520,10 @@ function renderTable(){
     const w = STICKY_WIDTHS[c];
     const bg = isHeader ? 'var(--bg2)' : 'var(--bg)';
     const z = isHeader ? 6 : 3;
-    const ellipsis = c === 'DESCRICAO' ? 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' : '';
-    return `style="position:sticky;left:${stickyLeft[c]}px;z-index:${z};background:${bg};width:${w}px;min-width:${w}px;max-width:${w}px;${ellipsis}"`;
+    // Descrição quebra em várias linhas em vez de cortar com "..." — no celular não dá
+    // pra passar o mouse pra ver o texto completo, então truncar escondia informação.
+    const wrap = c === 'DESCRICAO' ? 'white-space:normal;word-break:break-word;vertical-align:top;' : '';
+    return `style="position:sticky;left:${stickyLeft[c]}px;z-index:${z};background:${bg};width:${w}px;min-width:${w}px;max-width:${w}px;${wrap}"`;
   }
 
   let html = '<table><thead><tr>';
