@@ -223,7 +223,10 @@
       <div class="gestor-row">
         <input type="text" id="novoGestorNome" placeholder="Nome" style="flex:1;">
         <input type="text" id="novoGestorPin" placeholder="PIN" maxlength="4" style="width:70px;">
-        <button class="small primary" onclick="adicionarGestor()">+</button>
+      </div>
+      <div class="gestor-row">
+        <input type="text" id="novoGestorEmail" placeholder="E-mail (opcional)" style="flex:1;">
+        <button class="small primary" onclick="adicionarGestor()">Adicionar</button>
       </div>
       <div class="msg" id="msgAdmin"></div>
       <div class="modal-actions">
@@ -967,19 +970,32 @@ async function carregarGestores(){
   const res = await apiGet('getGestoresNomes');
   const list = document.getElementById('gestoresList');
   if(!res.ok){ list.innerHTML = 'Erro ao carregar gestores.'; return; }
-  list.innerHTML = res.nomes.map(n=>`
+  list.innerHTML = res.gestores.map(g=>`
     <div class="gestor-row">
-      <span>${escapeHtml(n)}</span>
-      <button class="small danger" onclick="removerGestor('${n.replace(/'/g,"\\'")}')">Remover</button>
+      <span>${escapeHtml(g.nome)}</span>
+      <input type="text" value="${escapeHtml(g.email||'')}" placeholder="sem e-mail" style="flex:1;font-size:11px;"
+        onchange="salvarEmailGestor('${g.nome.replace(/'/g,"\\'")}', this.value)">
+      <button class="small danger" onclick="removerGestor('${g.nome.replace(/'/g,"\\'")}')">Remover</button>
     </div>`).join('') || '<div style="color:var(--muted)">Nenhum gestor cadastrado.</div>';
+}
+async function salvarEmailGestor(nome, email){
+  const res = await apiPost('updateGestorEmail', {nome, email: email.trim(), admPin: admSessionPin});
+  if(res.ok){ showMsg('msgAdmin', 'E-mail de ' + nome + ' atualizado!', true); }
+  else showMsg('msgAdmin', res.error, false);
 }
 async function adicionarGestor(){
   const nome = document.getElementById('novoGestorNome').value.trim();
   const pin = document.getElementById('novoGestorPin').value.trim();
+  const email = document.getElementById('novoGestorEmail').value.trim();
   if(!nome || pin.length!==4){ showMsg('msgAdmin','Preencha nome e PIN de 4 dígitos.', false); return; }
-  const res = await apiPost('addGestor', {nome, pin, admPin: admSessionPin});
-  if(res.ok){ showMsg('msgAdmin','Gestor adicionado!', true); document.getElementById('novoGestorNome').value=''; document.getElementById('novoGestorPin').value=''; carregarGestores(); }
-  else showMsg('msgAdmin', res.error, false);
+  const res = await apiPost('addGestor', {nome, pin, email, admPin: admSessionPin});
+  if(res.ok){
+    showMsg('msgAdmin','Gestor adicionado!', true);
+    document.getElementById('novoGestorNome').value='';
+    document.getElementById('novoGestorPin').value='';
+    document.getElementById('novoGestorEmail').value='';
+    carregarGestores();
+  } else showMsg('msgAdmin', res.error, false);
 }
 async function removerGestor(nome){
   if(!confirm('Remover gestor '+nome+'?')) return;
