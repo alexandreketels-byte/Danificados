@@ -90,6 +90,9 @@
   .resultRow{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);font-size:11.5px;}
   .resultRow.ok{color:var(--green);}
   .resultRow.fail{color:var(--red);}
+  .preco-de{color:var(--red);text-decoration:line-through;font-size:12px;opacity:.85;}
+  .preco-por{color:var(--green);font-weight:800;font-size:14px;background:#3ddc8422;
+    padding:2px 8px;border-radius:6px;display:inline-block;}
 </style>
 </head>
 <body>
@@ -361,7 +364,9 @@ const STATUS_CLASS = {
 const RESTRICTED_COLS = new Set(['PRECO_CUSTO','PCT_DESCONTO']);
 // Colunas ocultas pra todo mundo (gestor e visitante) — continuam pesquisáveis na busca geral,
 // só não aparecem na tabela nem no seletor de "Colunas"
-const ALWAYS_HIDDEN_COLS = new Set(['PEDIDO','OS2','NF_FABRICA']);
+const ALWAYS_HIDDEN_COLS = new Set(['OS2','NF_FABRICA']);
+// Colunas que só aparecem no modo ADM (mesmo gestor não vê)
+const ADM_ONLY_COLS = new Set(['PEDIDO']);
 
 let currentGestor = null; // {nome, pin} quando alguém "entra como gestor"; null = modo visitante
 function isGestorMode(){ return !!currentGestor; }
@@ -517,7 +522,7 @@ function renderTable(){
   let rows = applyFilters(getScopedRows());
   rows = applySort(rows);
   const gestor = isGestorMode();
-  const cols = HEADERS.filter(h => VISIBLE_COLS.includes(h) && !ALWAYS_HIDDEN_COLS.has(h) && (gestor || isAdmMode || !RESTRICTED_COLS.has(h)));
+  const cols = HEADERS.filter(h => VISIBLE_COLS.includes(h) && !ALWAYS_HIDDEN_COLS.has(h) && (!ADM_ONLY_COLS.has(h) || isAdmMode) && (gestor || isAdmMode || !RESTRICTED_COLS.has(h)));
 
   let html = '<table><thead><tr>';
   if(gestor){
@@ -569,6 +574,8 @@ function renderCell(col, r){
     return `<span class="badge ${STATUS_CLASS[s]||''}">${escapeHtml(s)}</span>`;
   }
   if(col === 'ATUALIZADO_EM' && v) return escapeHtml(new Date(v).toLocaleString('pt-BR'));
+  if(col === 'PRECO_VENDA2' && v) return `<span class="preco-de">${escapeHtml(String(v))}</span>`;
+  if(col === 'LIQUIDACAO' && v) return `<span class="preco-por">${escapeHtml(String(v))}</span>`;
   return v===undefined||v===null ? '' : escapeHtml(String(v));
 }
 
@@ -788,7 +795,7 @@ async function restaurarSessaoGestor(){
 document.getElementById('btnCols').onclick = ()=>{
   const box = document.getElementById('colPicker');
   const gestor = isGestorMode();
-  box.innerHTML = HEADERS.filter(h => !ALWAYS_HIDDEN_COLS.has(h) && (gestor || isAdmMode || !RESTRICTED_COLS.has(h))).map(h=>`
+  box.innerHTML = HEADERS.filter(h => !ALWAYS_HIDDEN_COLS.has(h) && (!ADM_ONLY_COLS.has(h) || isAdmMode) && (gestor || isAdmMode || !RESTRICTED_COLS.has(h))).map(h=>`
     <label><input type="checkbox" value="${h}" ${VISIBLE_COLS.includes(h)?'checked':''}> ${LABELS[h]||h}</label>
   `).join('');
   openModal('ovCols');
@@ -1086,7 +1093,7 @@ document.getElementById('btnExport').onclick = ()=>{
   let rows = applyFilters(getScopedRows());
   rows = applySort(rows);
   const gestor = isGestorMode();
-  const cols = HEADERS.filter(h => VISIBLE_COLS.includes(h) && !ALWAYS_HIDDEN_COLS.has(h) && (gestor || isAdmMode || !RESTRICTED_COLS.has(h)));
+  const cols = HEADERS.filter(h => VISIBLE_COLS.includes(h) && !ALWAYS_HIDDEN_COLS.has(h) && (!ADM_ONLY_COLS.has(h) || isAdmMode) && (gestor || isAdmMode || !RESTRICTED_COLS.has(h)));
   const data = rows.map(r=>{
     const obj = {};
     cols.forEach(c=> obj[LABELS[c]||c] = r[c]);
