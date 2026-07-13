@@ -87,7 +87,29 @@ O botão **"Histórico"** em cada linha mostra todas as transições daquele ite
 - **Ordenar**: ícone ↕ ao lado do nome da coluna.
 - **Limpar Filtros**: reseta tudo de uma vez.
 
-## 8. Testando
+## 9. Notificações por e-mail
+
+A cada avanço de fase (Reservado, Convertido, Pedido Lançado, Separação Solicitada, OS Encerrada, Finalizado), o sistema dispara um e-mail pra você (ADM) e pro gestor responsável por aquele item, se ele tiver e-mail cadastrado.
+
+Passos pra ativar:
+
+1. No Apps Script, edite a função `setupEmailNotificacoes()`:
+   ```js
+   var EMAIL_DO_ADM = 'seu-email@exemplo.com'; // troque pelo seu e-mail
+   var PORTAL_URL = ''; // opcional: link do site, aparece no corpo do e-mail
+   ```
+2. Rode `setupEmailNotificacoes()` uma vez.
+3. Se sua aba "Gestores" já existia antes dessa atualização (sem a coluna EMAIL), rode `migrateAddEmailGestores()` uma vez — ela adiciona a coluna sem apagar nome/PIN.
+4. Preencha o e-mail de cada gestor: pelo painel **Área ADM** no site (tem um campo de e-mail do lado do nome de cada gestor agora) ou direto na planilha, coluna C da aba "Gestores".
+5. Redeploy de sempre: Implantar → Gerenciar implantações → Nova versão.
+
+Detalhes:
+- Se um gestor não tiver e-mail cadastrado, ele simplesmente não recebe nada — não dá erro, só pula.
+- Se `ADM_EMAIL` não estiver configurado, nenhum e-mail é enviado (mas o sistema continua funcionando normalmente).
+- O Gmail/Apps Script tem um limite diário de envio (100 e-mails/dia em conta pessoal do Gmail, bem mais em contas Google Workspace) — não deve ser problema no seu volume atual, mas se um dia isso virar gargalo (ex: lote com 50+ itens de uma vez), dá pra agrupar os e-mails de uma ação em lote num resumo único em vez de um e-mail por item.
+- As ações em lote também disparam e-mail — um por item, então reservar 6 OS de uma vez gera 6 e-mails (pra cada gestor + você).
+
+## 10. Testando
 
 Abra o `index.html` e confira se a tabela carrega. Erro de CORS geralmente é implantação sem acesso "Qualquer pessoa" ou URL sem `/exec`.
 
