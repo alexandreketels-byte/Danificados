@@ -275,9 +275,9 @@
 <div class="overlay" id="ovBulkConverter">
   <div class="modal">
     <h3>ADM: Converter <span id="bConverterCount"></span> itens</h3>
-    <p style="color:var(--muted);margin:0;">O código de cada item vira o prefixo + o número da OS (garante que fica único). Deixe o prefixo em branco pra usar só o número da OS.</p>
-    <label>Prefixo (opcional)</label>
-    <input type="text" id="prefixoBulkConverter" placeholder="Ex: DAN-">
+    <p style="color:var(--muted);margin:0;">O código digitado é gravado igual pra todos os itens selecionados. Se cada máquina precisa de um código diferente, converta um por um pelo botão "ADM: Converter" da linha.</p>
+    <label>Código danificado convertido</label>
+    <input type="text" id="codigoBulkConverter" placeholder="Ex: DAN-00123">
     <label>PIN do ADM</label>
     <input type="password" maxlength="10" id="pinBulkConverter" placeholder="••••">
     <div class="msg" id="msgBulkConverter"></div>
@@ -710,10 +710,11 @@ function abrirBulkConverter(){
   openModal('ovBulkConverter');
 }
 async function confirmarBulkConverter(){
-  const prefixo = document.getElementById('prefixoBulkConverter').value.trim();
+  const codigo = document.getElementById('codigoBulkConverter').value.trim();
   const admPin = document.getElementById('pinBulkConverter').value.trim();
+  if(!codigo){ showMsg('msgBulkConverter','Informe o código danificado convertido.', false); return; }
   if(!admPin){ showMsg('msgBulkConverter','Digite o PIN do ADM.', false); return; }
-  const res = await apiPost('bulk', {acao:'converter', osList: Array.from(SELECTED), prefixo, admPin});
+  const res = await apiPost('bulk', {acao:'converter', osList: Array.from(SELECTED), codigo, admPin});
   if(!res.ok){ showMsg('msgBulkConverter', res.error, false); return; }
   closeModal('ovBulkConverter');
   SELECTED.clear();
