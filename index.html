@@ -238,6 +238,18 @@
         <input type="text" id="novoGestorEmail" placeholder="E-mail (opcional)" style="flex:1;">
         <button class="small primary" id="btnAdicionarGestor" onclick="adicionarGestor()">Adicionar</button>
       </div>
+
+      <h4 style="color:var(--accent2);margin:16px 0 6px;">Admins</h4>
+      <p style="color:var(--muted);font-size:11px;margin:0 0 8px;">Cada admin nomeado tem seu próprio PIN e aparece pelo nome no histórico (em vez de só "ADM"). Remover um admin daqui não afeta os outros nem o PIN mestre.</p>
+      <div id="adminsList"></div>
+      <div class="gestor-row">
+        <input type="text" id="novoAdminNome" placeholder="Nome" style="flex:1;">
+        <input type="text" id="novoAdminPin" placeholder="PIN" maxlength="4" style="width:70px;">
+      </div>
+      <div class="gestor-row">
+        <input type="text" id="novoAdminEmail" placeholder="E-mail (opcional)" style="flex:1;">
+        <button class="small primary" id="btnAdicionarAdmin" onclick="adicionarAdmin()">Adicionar</button>
+      </div>
       <div class="msg" id="msgAdmin"></div>
       <div class="modal-actions">
         <button class="danger" onclick="sairModoAdm()">Sair do Modo ADM</button>
@@ -998,6 +1010,7 @@ document.getElementById('btnAdmin').onclick = ()=>{
     document.getElementById('admGate').style.display = 'none';
     document.getElementById('admPanel').style.display = 'block';
     carregarGestores();
+    carregarAdmins();
   } else {
     document.getElementById('admGate').style.display = 'block';
     document.getElementById('admPanel').style.display = 'none';
@@ -1018,6 +1031,7 @@ async function entrarAdmin(){
       document.getElementById('admGate').style.display = 'none';
       document.getElementById('admPanel').style.display = 'block';
       carregarGestores();
+      carregarAdmins();
       renderStatusChips();
       renderTable();
     } else {
@@ -1091,6 +1105,49 @@ async function removerGestor(nome){
   if(!confirm('Remover gestor '+nome+'?')) return;
   const res = await apiPost('removeGestor', {nome, admPin: admSessionPin});
   if(res.ok){ carregarGestores(); } else { showMsg('msgAdmin', res.error, false); }
+}
+
+async function carregarAdmins(){
+  const res = await apiGet('getAdminsNomes');
+  const list = document.getElementById('adminsList');
+  if(!res.ok){ list.innerHTML = 'Erro ao carregar admins.'; return; }
+  list.innerHTML = res.admins.map(a=>`
+    <div class="gestor-row">
+      <span>${escapeHtml(a.nome)}</span>
+      <input type="text" value="${escapeHtml(a.email||'')}" placeholder="sem e-mail" style="flex:1;font-size:11px;"
+        onchange="salvarEmailAdmin('${a.nome.replace(/'/g,"\\'")}', this.value)">
+      <button class="small danger" onclick="removerAdmin('${a.nome.replace(/'/g,"\\'")}')">Remover</button>
+    </div>`).join('') || '<div style="color:var(--muted)">Nenhum admin nomeado — só o PIN mestre está ativo.</div>';
+}
+async function salvarEmailAdmin(nome, email){
+  const res = await apiPost('updateAdminEmail', {nome, email: email.trim(), admPin: admSessionPin});
+  if(res.ok){ showMsg('msgAdmin', 'E-mail de ' + nome + ' atualizado!', true); }
+  else showMsg('msgAdmin', res.error, false);
+}
+async function adicionarAdmin(){
+  const nome = document.getElementById('novoAdminNome').value.trim();
+  const pin = document.getElementById('novoAdminPin').value.trim();
+  const email = document.getElementById('novoAdminEmail').value.trim();
+  if(!nome || pin.length!==4){ showMsg('msgAdmin','Preencha nome e PIN de 4 dígitos.', false); return; }
+  const btn = document.getElementById('btnAdicionarAdmin');
+  setBtnLoading(btn, true);
+  try{
+    const res = await apiPost('addAdmin', {nome, pin, email, admPin: admSessionPin});
+    if(res.ok){
+      showMsg('msgAdmin','Admin adicionado!', true);
+      document.getElementById('novoAdminNome').value='';
+      document.getElementById('novoAdminPin').value='';
+      document.getElementById('novoAdminEmail').value='';
+      carregarAdmins();
+    } else showMsg('msgAdmin', res.error, false);
+  }finally{
+    setBtnLoading(btn, false);
+  }
+}
+async function removerAdmin(nome){
+  if(!confirm('Remover admin '+nome+'? (o PIN mestre continua funcionando normalmente)')) return;
+  const res = await apiPost('removeAdmin', {nome, admPin: admSessionPin});
+  if(res.ok){ carregarAdmins(); } else { showMsg('msgAdmin', res.error, false); }
 }
 
 /* ==================== IMPORTAR CSV ==================== */
