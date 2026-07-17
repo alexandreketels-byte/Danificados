@@ -25,6 +25,13 @@
   button.primary:hover{background:var(--accent2);color:#1a1200;}
   button.danger{border-color:var(--red);color:var(--red);}
   button.small{padding:4px 8px;font-size:11px;}
+  button.loading-btn{color:transparent!important;pointer-events:none;position:relative;}
+  button.loading-btn::after{
+    content:"";position:absolute;left:50%;top:50%;width:13px;height:13px;margin:-7px 0 0 -7px;
+    border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;
+    animation:btnspin .6s linear infinite;
+  }
+  @keyframes btnspin{to{transform:rotate(360deg);}}
   .globalSearch{display:flex;align-items:center;gap:8px;padding:12px 20px 0;flex-wrap:wrap;}
   .globalSearch input[type=text]{flex:1;max-width:420px;background:var(--card);border:1px solid var(--border);
     color:var(--text);padding:9px 12px;border-radius:7px;font-size:13px;}
@@ -144,7 +151,7 @@
     <div class="msg" id="msgReservar"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovReservar')">Cancelar</button>
-      <button class="primary" onclick="confirmarReserva()">Reservar</button>
+      <button class="primary" id="btnConfirmarReserva" onclick="confirmarReserva()">Reservar</button>
     </div>
   </div>
 </div>
@@ -158,7 +165,7 @@
     <div class="msg" id="msgDesfazer"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovDesfazer')">Cancelar</button>
-      <button class="danger" onclick="confirmarDesfazer()">Desfazer</button>
+      <button class="danger" id="btnConfirmarDesfazer" onclick="confirmarDesfazer()">Desfazer</button>
     </div>
   </div>
 </div>
@@ -174,7 +181,7 @@
     <div class="msg" id="msgPedido"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovPedido')">Cancelar</button>
-      <button class="primary" onclick="confirmarNumPedido()">Salvar</button>
+      <button class="primary" id="btnConfirmarNumPedido" onclick="confirmarNumPedido()">Salvar</button>
     </div>
   </div>
 </div>
@@ -216,7 +223,7 @@
       <div class="msg" id="msgAdmGate"></div>
       <div class="modal-actions">
         <button onclick="closeModal('ovAdmin')">Cancelar</button>
-        <button class="primary" onclick="entrarAdmin()">Entrar</button>
+        <button class="primary" id="btnEntrarAdmin" onclick="entrarAdmin()">Entrar</button>
       </div>
     </div>
     <div id="admPanel" style="display:none;">
@@ -229,7 +236,7 @@
       </div>
       <div class="gestor-row">
         <input type="text" id="novoGestorEmail" placeholder="E-mail (opcional)" style="flex:1;">
-        <button class="small primary" onclick="adicionarGestor()">Adicionar</button>
+        <button class="small primary" id="btnAdicionarGestor" onclick="adicionarGestor()">Adicionar</button>
       </div>
       <div class="msg" id="msgAdmin"></div>
       <div class="modal-actions">
@@ -249,7 +256,7 @@
     <div class="msg" id="msgBulkReservar"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovBulkReservar')">Cancelar</button>
-      <button class="primary" onclick="confirmarBulkReservar()">Reservar todos</button>
+      <button class="primary" id="btnConfirmarBulkReservar" onclick="confirmarBulkReservar()">Reservar todos</button>
     </div>
   </div>
 </div>
@@ -266,7 +273,7 @@
     <div class="msg" id="msgBulkPedido"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovBulkPedido')">Cancelar</button>
-      <button class="primary" onclick="confirmarBulkPedido()">Salvar</button>
+      <button class="primary" id="btnConfirmarBulkPedido" onclick="confirmarBulkPedido()">Salvar</button>
     </div>
   </div>
 </div>
@@ -283,7 +290,7 @@
     <div class="msg" id="msgBulkConverter"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovBulkConverter')">Cancelar</button>
-      <button class="primary" onclick="confirmarBulkConverter()">Converter todos</button>
+      <button class="primary" id="btnConfirmarBulkConverter" onclick="confirmarBulkConverter()">Converter todos</button>
     </div>
   </div>
 </div>
@@ -324,7 +331,7 @@
     <div class="msg" id="msgModoGestor"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovModoGestor')">Cancelar</button>
-      <button class="primary" onclick="confirmarModoGestor()">Entrar</button>
+      <button class="primary" id="btnConfirmarModoGestor" onclick="confirmarModoGestor()">Entrar</button>
     </div>
   </div>
 </div>
@@ -390,6 +397,12 @@ let admSessionPin = null;
 let SELECTED = new Set(); // OS selecionadas pra ações em lote
 
 /* ==================== API ==================== */
+// Trava o botão (evita duplo clique) e mostra um spinner enquanto uma ação está em andamento.
+function setBtnLoading(btn, loading){
+  if(!btn) return;
+  btn.disabled = loading;
+  btn.classList.toggle('loading-btn', loading);
+}
 async function apiGet(action, params={}){
   const url = new URL(APPS_SCRIPT_URL);
   url.searchParams.set('action', action);
@@ -678,12 +691,18 @@ function abrirBulkReservar(){
 async function confirmarBulkReservar(){
   const pin = document.getElementById('pinBulkReservar').value.trim();
   if(pin.length !== 4){ showMsg('msgBulkReservar','Digite os 4 dígitos do seu PIN.', false); return; }
-  const res = await apiPost('bulk', {acao:'reservar', osList: Array.from(SELECTED), pin});
-  if(!res.ok){ showMsg('msgBulkReservar', res.error, false); return; }
-  closeModal('ovBulkReservar');
-  SELECTED.clear();
-  loadData();
-  mostrarResultadoBulk('Reservar', res);
+  const btn = document.getElementById('btnConfirmarBulkReservar');
+  setBtnLoading(btn, true);
+  try{
+    const res = await apiPost('bulk', {acao:'reservar', osList: Array.from(SELECTED), pin});
+    if(!res.ok){ showMsg('msgBulkReservar', res.error, false); return; }
+    closeModal('ovBulkReservar');
+    SELECTED.clear();
+    loadData();
+    mostrarResultadoBulk('Reservar', res);
+  }finally{
+    setBtnLoading(btn, false);
+  }
 }
 
 /* ==================== LANÇAR PEDIDO EM LOTE ==================== */
@@ -696,12 +715,18 @@ async function confirmarBulkPedido(){
   const pin = document.getElementById('pinBulkPedido').value.trim();
   if(!numPedido){ showMsg('msgBulkPedido','Informe o número do pedido.', false); return; }
   if(pin.length !== 4){ showMsg('msgBulkPedido','Digite os 4 dígitos do seu PIN.', false); return; }
-  const res = await apiPost('bulk', {acao:'lancarPedido', osList: Array.from(SELECTED), numPedido, pin});
-  if(!res.ok){ showMsg('msgBulkPedido', res.error, false); return; }
-  closeModal('ovBulkPedido');
-  SELECTED.clear();
-  loadData();
-  mostrarResultadoBulk('Lançar Pedido', res);
+  const btn = document.getElementById('btnConfirmarBulkPedido');
+  setBtnLoading(btn, true);
+  try{
+    const res = await apiPost('bulk', {acao:'lancarPedido', osList: Array.from(SELECTED), numPedido, pin});
+    if(!res.ok){ showMsg('msgBulkPedido', res.error, false); return; }
+    closeModal('ovBulkPedido');
+    SELECTED.clear();
+    loadData();
+    mostrarResultadoBulk('Lançar Pedido', res);
+  }finally{
+    setBtnLoading(btn, false);
+  }
 }
 
 /* ==================== CONVERTER EM LOTE (ADM) ==================== */
@@ -714,27 +739,38 @@ async function confirmarBulkConverter(){
   const admPin = document.getElementById('pinBulkConverter').value.trim();
   if(!codigo){ showMsg('msgBulkConverter','Informe o código danificado convertido.', false); return; }
   if(!admPin){ showMsg('msgBulkConverter','Digite o PIN do ADM.', false); return; }
-  const res = await apiPost('bulk', {acao:'converter', osList: Array.from(SELECTED), codigo, admPin});
-  if(!res.ok){ showMsg('msgBulkConverter', res.error, false); return; }
-  closeModal('ovBulkConverter');
-  SELECTED.clear();
-  loadData();
-  mostrarResultadoBulk('Converter', res);
+  const btn = document.getElementById('btnConfirmarBulkConverter');
+  setBtnLoading(btn, true);
+  try{
+    const res = await apiPost('bulk', {acao:'converter', osList: Array.from(SELECTED), codigo, admPin});
+    if(!res.ok){ showMsg('msgBulkConverter', res.error, false); return; }
+    closeModal('ovBulkConverter');
+    SELECTED.clear();
+    loadData();
+    mostrarResultadoBulk('Converter', res);
+  }finally{
+    setBtnLoading(btn, false);
+  }
 }
 
 /* ==================== AÇÕES ADM SIMPLES EM LOTE ==================== */
 function abrirBulkAdmSimples(acao, titulo, descricao){
   document.getElementById('bulkAdmTitle').textContent = titulo + ' — ' + SELECTED.size + ' itens';
   document.getElementById('bulkAdmDesc').textContent = descricao;
-  document.getElementById('btnBulkAdmSimplesConfirm').onclick = async ()=>{
+  document.getElementById('btnBulkAdmSimplesConfirm').onclick = async (ev)=>{
     const admPin = document.getElementById('pinBulkAdmSimples').value.trim();
     if(!admPin){ showMsg('msgBulkAdmSimples','Digite o PIN do ADM.', false); return; }
-    const res = await apiPost('bulk', {acao, osList: Array.from(SELECTED), admPin});
-    if(!res.ok){ showMsg('msgBulkAdmSimples', res.error, false); return; }
-    closeModal('ovBulkAdmSimples');
-    SELECTED.clear();
-    loadData();
-    mostrarResultadoBulk(titulo, res);
+    setBtnLoading(ev.currentTarget, true);
+    try{
+      const res = await apiPost('bulk', {acao, osList: Array.from(SELECTED), admPin});
+      if(!res.ok){ showMsg('msgBulkAdmSimples', res.error, false); return; }
+      closeModal('ovBulkAdmSimples');
+      SELECTED.clear();
+      loadData();
+      mostrarResultadoBulk(titulo, res);
+    }finally{
+      setBtnLoading(ev.currentTarget, false);
+    }
   };
   openModal('ovBulkAdmSimples');
 }
@@ -771,14 +807,20 @@ document.getElementById('btnModoGestor').onclick = ()=>{
 async function confirmarModoGestor(){
   const pin = document.getElementById('pinModoGestor').value.trim();
   if(pin.length !== 4){ showMsg('msgModoGestor','Digite os 4 dígitos do seu PIN.', false); return; }
-  const res = await apiPost('checkGestorPin', {pin});
-  if(!res.ok){ showMsg('msgModoGestor', res.error, false); return; }
-  currentGestor = { nome: res.nome, pin };
-  sessionStorage.setItem(LS_PREFIX+'gestorPin', pin);
-  closeModal('ovModoGestor');
-  updateModeUI();
-  renderTable();
-  toast('Bem-vindo, ' + res.nome + '!');
+  const btn = document.getElementById('btnConfirmarModoGestor');
+  setBtnLoading(btn, true);
+  try{
+    const res = await apiPost('checkGestorPin', {pin});
+    if(!res.ok){ showMsg('msgModoGestor', res.error, false); return; }
+    currentGestor = { nome: res.nome, pin };
+    sessionStorage.setItem(LS_PREFIX+'gestorPin', pin);
+    closeModal('ovModoGestor');
+    updateModeUI();
+    renderTable();
+    toast('Bem-vindo, ' + res.nome + '!');
+  }finally{
+    setBtnLoading(btn, false);
+  }
 }
 async function restaurarSessaoGestor(){
   const pin = sessionStorage.getItem(LS_PREFIX+'gestorPin');
@@ -837,9 +879,15 @@ function abrirReservar(os){
 async function confirmarReserva(){
   const pin = document.getElementById('pinReservar').value.trim();
   if(pin.length !== 4){ showMsg('msgReservar','Digite os 4 dígitos do seu PIN.', false); return; }
-  const res = await apiPost('reservar', {os: currentAction, pin});
-  if(res.ok){ toast('Reservado para '+res.gestor+'!'); closeModal('ovReservar'); loadData(); }
-  else showMsg('msgReservar', res.error, false);
+  const btn = document.getElementById('btnConfirmarReserva');
+  setBtnLoading(btn, true);
+  try{
+    const res = await apiPost('reservar', {os: currentAction, pin});
+    if(res.ok){ toast('Reservado para '+res.gestor+'!'); closeModal('ovReservar'); loadData(); }
+    else showMsg('msgReservar', res.error, false);
+  }finally{
+    setBtnLoading(btn, false);
+  }
 }
 
 /* ==================== DESFAZER RESERVA ==================== */
@@ -851,9 +899,15 @@ function abrirDesfazer(os){
 async function confirmarDesfazer(){
   const pin = document.getElementById('pinDesfazer').value.trim();
   if(pin.length !== 4){ showMsg('msgDesfazer','Digite os 4 dígitos do seu PIN.', false); return; }
-  const res = await apiPost('desfazerReserva', {os: currentAction, pin});
-  if(res.ok){ toast('Reserva desfeita.'); closeModal('ovDesfazer'); loadData(); }
-  else showMsg('msgDesfazer', res.error, false);
+  const btn = document.getElementById('btnConfirmarDesfazer');
+  setBtnLoading(btn, true);
+  try{
+    const res = await apiPost('desfazerReserva', {os: currentAction, pin});
+    if(res.ok){ toast('Reserva desfeita.'); closeModal('ovDesfazer'); loadData(); }
+    else showMsg('msgDesfazer', res.error, false);
+  }finally{
+    setBtnLoading(btn, false);
+  }
 }
 
 /* ==================== LANÇAR PEDIDO (gestor) ==================== */
@@ -867,9 +921,15 @@ async function confirmarNumPedido(){
   const pin = document.getElementById('pinPedido').value.trim();
   if(!numPedido){ showMsg('msgPedido','Informe o número do pedido.', false); return; }
   if(pin.length !== 4){ showMsg('msgPedido','Digite os 4 dígitos do seu PIN.', false); return; }
-  const res = await apiPost('lancarPedido', {os: currentAction, numPedido, pin});
-  if(res.ok){ toast('Nº do pedido salvo!'); closeModal('ovPedido'); loadData(); }
-  else showMsg('msgPedido', res.error, false);
+  const btn = document.getElementById('btnConfirmarNumPedido');
+  setBtnLoading(btn, true);
+  try{
+    const res = await apiPost('lancarPedido', {os: currentAction, numPedido, pin});
+    if(res.ok){ toast('Nº do pedido salvo!'); closeModal('ovPedido'); loadData(); }
+    else showMsg('msgPedido', res.error, false);
+  }finally{
+    setBtnLoading(btn, false);
+  }
 }
 
 /* ==================== AÇÕES ADM ==================== */
@@ -880,13 +940,18 @@ function abrirAdmConverter(os){
   document.getElementById('admActionExtra').innerHTML = `
     <label>Código danificado convertido</label>
     <input type="text" id="admConverterValue" placeholder="Ex: DAN-00123">`;
-  document.getElementById('btnAdmActionConfirm').onclick = async ()=>{
+  document.getElementById('btnAdmActionConfirm').onclick = async (ev)=>{
     const codConvertido = document.getElementById('admConverterValue').value.trim();
     const admPin = document.getElementById('pinAdmAction').value.trim();
     if(!codConvertido){ showMsg('msgAdmAction','Informe o código.', false); return; }
-    const res = await apiPost('converter', {os: currentAction, codConvertido, admPin});
-    if(res.ok){ toast('Item convertido!'); closeModal('ovAdmAction'); loadData(); }
-    else showMsg('msgAdmAction', res.error, false);
+    setBtnLoading(ev.currentTarget, true);
+    try{
+      const res = await apiPost('converter', {os: currentAction, codConvertido, admPin});
+      if(res.ok){ toast('Item convertido!'); closeModal('ovAdmAction'); loadData(); }
+      else showMsg('msgAdmAction', res.error, false);
+    }finally{
+      setBtnLoading(ev.currentTarget, false);
+    }
   };
   openModal('ovAdmAction');
 }
@@ -897,11 +962,16 @@ function abrirAdmSimples(os, action, titulo, descricao){
   document.getElementById('admActionTitle').textContent = 'ADM: ' + titulo + ' — OS #' + os;
   document.getElementById('admActionDesc').textContent = descricao;
   document.getElementById('admActionExtra').innerHTML = '';
-  document.getElementById('btnAdmActionConfirm').onclick = async ()=>{
+  document.getElementById('btnAdmActionConfirm').onclick = async (ev)=>{
     const admPin = document.getElementById('pinAdmAction').value.trim();
-    const res = await apiPost(action, {os: currentAction, admPin});
-    if(res.ok){ toast(titulo + ' — feito!'); closeModal('ovAdmAction'); loadData(); }
-    else showMsg('msgAdmAction', res.error, false);
+    setBtnLoading(ev.currentTarget, true);
+    try{
+      const res = await apiPost(action, {os: currentAction, admPin});
+      if(res.ok){ toast(titulo + ' — feito!'); closeModal('ovAdmAction'); loadData(); }
+      else showMsg('msgAdmAction', res.error, false);
+    }finally{
+      setBtnLoading(ev.currentTarget, false);
+    }
   };
   openModal('ovAdmAction');
 }
@@ -936,19 +1006,25 @@ document.getElementById('btnAdmin').onclick = ()=>{
 };
 async function entrarAdmin(){
   const pin = document.getElementById('pinAdmGate').value.trim();
-  const res = await apiPost('checkAdmPin', {admPin: pin});
-  if(res.ok){
-    admSessionPin = pin;
-    isAdmMode = true;
-    sessionStorage.setItem(LS_PREFIX+'admPin', pin);
-    updateAdmUI();
-    document.getElementById('admGate').style.display = 'none';
-    document.getElementById('admPanel').style.display = 'block';
-    carregarGestores();
-    renderStatusChips();
-    renderTable();
-  } else {
-    showMsg('msgAdmGate', 'PIN incorreto.', false);
+  const btn = document.getElementById('btnEntrarAdmin');
+  setBtnLoading(btn, true);
+  try{
+    const res = await apiPost('checkAdmPin', {admPin: pin});
+    if(res.ok){
+      admSessionPin = pin;
+      isAdmMode = true;
+      sessionStorage.setItem(LS_PREFIX+'admPin', pin);
+      updateAdmUI();
+      document.getElementById('admGate').style.display = 'none';
+      document.getElementById('admPanel').style.display = 'block';
+      carregarGestores();
+      renderStatusChips();
+      renderTable();
+    } else {
+      showMsg('msgAdmGate', 'PIN incorreto.', false);
+    }
+  }finally{
+    setBtnLoading(btn, false);
   }
 }
 function sairModoAdm(){
@@ -996,14 +1072,20 @@ async function adicionarGestor(){
   const pin = document.getElementById('novoGestorPin').value.trim();
   const email = document.getElementById('novoGestorEmail').value.trim();
   if(!nome || pin.length!==4){ showMsg('msgAdmin','Preencha nome e PIN de 4 dígitos.', false); return; }
-  const res = await apiPost('addGestor', {nome, pin, email, admPin: admSessionPin});
-  if(res.ok){
-    showMsg('msgAdmin','Gestor adicionado!', true);
-    document.getElementById('novoGestorNome').value='';
-    document.getElementById('novoGestorPin').value='';
-    document.getElementById('novoGestorEmail').value='';
-    carregarGestores();
-  } else showMsg('msgAdmin', res.error, false);
+  const btn = document.getElementById('btnAdicionarGestor');
+  setBtnLoading(btn, true);
+  try{
+    const res = await apiPost('addGestor', {nome, pin, email, admPin: admSessionPin});
+    if(res.ok){
+      showMsg('msgAdmin','Gestor adicionado!', true);
+      document.getElementById('novoGestorNome').value='';
+      document.getElementById('novoGestorPin').value='';
+      document.getElementById('novoGestorEmail').value='';
+      carregarGestores();
+    } else showMsg('msgAdmin', res.error, false);
+  }finally{
+    setBtnLoading(btn, false);
+  }
 }
 async function removerGestor(nome){
   if(!confirm('Remover gestor '+nome+'?')) return;
@@ -1017,22 +1099,28 @@ document.getElementById('fileInput').onchange = async (e)=>{
   const file = e.target.files[0];
   if(!file) return;
   const admPin = prompt('PIN do ADM para importar:');
-  if(!admPin) return;
-  const text = await readFileSmart(file);
-  const rows = parseCSV(text);
-  if(!rows.length){ toast('Nenhuma linha válida encontrada no CSV.', false); return; }
+  if(!admPin){ e.target.value = ''; return; }
+  const btnImport = document.getElementById('btnImport');
+  setBtnLoading(btnImport, true);
+  try{
+    const text = await readFileSmart(file);
+    const rows = parseCSV(text);
+    if(!rows.length){ toast('Nenhuma linha válida encontrada no CSV.', false); return; }
 
-  const CHUNK = 200;
-  let inseridas=0, atualizadas=0, ignoradas=0;
-  for(let i=0;i<rows.length;i+=CHUNK){
-    const chunk = rows.slice(i, i+CHUNK);
-    const res = await apiPost('importCSV', {rows: chunk, admPin});
-    if(!res.ok){ toast('Erro na importação: '+res.error, false); return; }
-    inseridas += res.inseridas; atualizadas += res.atualizadas; ignoradas += res.ignoradas;
+    const CHUNK = 200;
+    let inseridas=0, atualizadas=0, ignoradas=0;
+    for(let i=0;i<rows.length;i+=CHUNK){
+      const chunk = rows.slice(i, i+CHUNK);
+      const res = await apiPost('importCSV', {rows: chunk, admPin});
+      if(!res.ok){ toast('Erro na importação: '+res.error, false); return; }
+      inseridas += res.inseridas; atualizadas += res.atualizadas; ignoradas += res.ignoradas;
+    }
+    toast(`Importação concluída: ${inseridas} novos, ${atualizadas} atualizados, ${ignoradas} ignorados.`);
+    loadData();
+  }finally{
+    setBtnLoading(btnImport, false);
+    e.target.value = '';
   }
-  toast(`Importação concluída: ${inseridas} novos, ${atualizadas} atualizados, ${ignoradas} ignorados.`);
-  loadData();
-  e.target.value = '';
 };
 
 async function readFileSmart(file){
