@@ -608,26 +608,34 @@ function renderCell(col, r){
 function renderAcoes(r){
   const os = r.OS;
   const historico = `<button class="small" onclick="abrirHistorico('${os}')">Histórico</button>`;
-  if(!isGestorMode()) return historico; // visitante só vê o histórico, sem ações
+  const gestor = isGestorMode();
+  const adm = isAdmMode;
+  if(!gestor && !adm) return historico; // visitante só vê o histórico, sem ações
 
   const status = r.STATUS || 'Disponível';
   let btns = historico;
 
   if(status === 'Disponível'){
-    btns += `<button class="small primary" onclick="abrirReservar('${os}')">Reservar</button>`;
+    if(gestor) btns += `<button class="small primary" onclick="abrirReservar('${os}')">Reservar</button>`;
+    if(adm) btns += `<button class="small primary" onclick="abrirAdmReservar('${os}')">ADM: Reservar</button>`;
   } else if(status === 'Reservado'){
-    btns += `<button class="small danger" onclick="abrirDesfazer('${os}')">Desfazer</button>`;
-    btns += `<button class="small" onclick="abrirAdmConverter('${os}')">ADM: Converter</button>`;
+    if(gestor) btns += `<button class="small danger" onclick="abrirDesfazer('${os}')">Desfazer</button>`;
+    if(adm) btns += `<button class="small" onclick="abrirAdmConverter('${os}')">ADM: Converter</button>`;
   } else if(status === 'Convertido'){
-    btns += `<button class="small primary" onclick="abrirNumPedido('${os}')">Lançar Pedido</button>`;
+    if(gestor) btns += `<button class="small primary" onclick="abrirNumPedido('${os}')">Lançar Pedido</button>`;
+    if(adm) btns += `<button class="small primary" onclick="abrirAdmNumPedido('${os}')">ADM: Lançar Pedido</button>`;
   } else if(status === 'Pedido Lançado'){
-    btns += `<button class="small" onclick="abrirAdmSimples('${os}', 'solicitarSeparacao', 'Solicitar Separação', 'Solicita o encerramento da OS e a separação do item pra distribuição.')">ADM: Solicitar Separação</button>`;
+    if(adm) btns += `<button class="small" onclick="abrirAdmSimples('${os}', 'solicitarSeparacao', 'Solicitar Separação', 'Solicita o encerramento da OS e a separação do item pra distribuição.')">ADM: Solicitar Separação</button>`;
   } else if(status === 'Separação Solicitada'){
-    btns += `<button class="small" onclick="abrirAdmSimples('${os}', 'confirmarOsEncerrada', 'Confirmar OS Encerrada', 'Confirma que a OS foi encerrada e o item separado.')">ADM: Confirmar OS Encerrada</button>`;
+    if(adm) btns += `<button class="small" onclick="abrirAdmSimples('${os}', 'confirmarOsEncerrada', 'Confirmar OS Encerrada', 'Confirma que a OS foi encerrada e o item separado.')">ADM: Confirmar OS Encerrada</button>`;
   } else if(status === 'OS Encerrada'){
-    btns += `<button class="small primary" onclick="abrirAdmSimples('${os}', 'finalizar', 'Finalizar', 'Marca o item como finalizado — pedido atendido.')">ADM: Finalizar</button>`;
+    if(adm) btns += `<button class="small primary" onclick="abrirAdmSimples('${os}', 'finalizar', 'Finalizar', 'Marca o item como finalizado — pedido atendido.')">ADM: Finalizar</button>`;
   }
-  // Finalizado: só Histórico
+  // ADM pode desfazer qualquer fase em andamento (menos "Disponível", que já é o início)
+  if(adm && status !== 'Disponível'){
+    btns += `<button class="small danger" onclick="abrirDesfazerAdm('${os}', '${status}')">ADM: Desfazer</button>`;
+  }
+  // Finalizado (sem ADM): só Histórico
   return btns;
 }
 
@@ -945,6 +953,67 @@ async function confirmarNumPedido(){
 }
 
 /* ==================== AÇÕES ADM ==================== */
+function abrirAdmReservar(os){
+  currentAction = os;
+  document.getElementById('admActionTitle').textContent = 'ADM: Reservar — OS #'+os;
+  document.getElementById('admActionDesc').textContent = 'Reserva o item em nome do ADM, avançando pra fase "Reservado".';
+  document.getElementById('admActionExtra').innerHTML = '';
+  document.getElementById('btnAdmActionConfirm').onclick = async (ev)=>{
+    const admPin = document.getElementById('pinAdmAction').value.trim();
+    setBtnLoading(ev.currentTarget, true);
+    try{
+      const res = await apiPost('reservar', {os: currentAction, pin: admPin});
+      if(res.ok){ toast('Reservado para '+res.gestor+'!'); closeModal('ovAdmAction'); loadData(); }
+      else showMsg('msgAdmAction', res.error, false);
+    }finally{
+      setBtnLoading(ev.currentTarget, false);
+    }
+  };
+  openModal('ovAdmAction');
+}
+
+function abrirAdmNumPedido(os){
+  currentAction = os;
+  document.getElementById('admActionTitle').textContent = 'ADM: Lançar Pedido — OS #'+os;
+  document.getElementById('admActionDesc').textContent = 'Grava o número do pedido e avança o item pra fase "Pedido Lançado".';
+  document.getElementById('admActionExtra').innerHTML = `
+    <label>Número do pedido</label>
+    <input type="text" id="admNumPedidoValue" placeholder="Ex: 480123">`;
+  document.getElementById('btnAdmActionConfirm').onclick = async (ev)=>{
+    const numPedido = document.getElementById('admNumPedidoValue').value.trim();
+    const admPin = document.getElementById('pinAdmAction').value.trim();
+    if(!numPedido){ showMsg('msgAdmAction','Informe o número do pedido.', false); return; }
+    setBtnLoading(ev.currentTarget, true);
+    try{
+      const res = await apiPost('lancarPedido', {os: currentAction, numPedido, pin: admPin});
+      if(res.ok){ toast('Nº do pedido salvo!'); closeModal('ovAdmAction'); loadData(); }
+      else showMsg('msgAdmAction', res.error, false);
+    }finally{
+      setBtnLoading(ev.currentTarget, false);
+    }
+  };
+  openModal('ovAdmAction');
+}
+
+function abrirDesfazerAdm(os, statusAtual){
+  currentAction = os;
+  document.getElementById('admActionTitle').textContent = 'ADM: Desfazer — OS #'+os;
+  document.getElementById('admActionDesc').textContent = 'Volta o item uma fase pra trás (fase atual: "' + statusAtual + '"). Use com cuidado — essa ação não tem "refazer".';
+  document.getElementById('admActionExtra').innerHTML = '';
+  document.getElementById('btnAdmActionConfirm').onclick = async (ev)=>{
+    const admPin = document.getElementById('pinAdmAction').value.trim();
+    setBtnLoading(ev.currentTarget, true);
+    try{
+      const res = await apiPost('desfazerAdm', {os: currentAction, admPin});
+      if(res.ok){ toast('Desfeito! Fase atual: '+res.novoStatus); closeModal('ovAdmAction'); loadData(); }
+      else showMsg('msgAdmAction', res.error, false);
+    }finally{
+      setBtnLoading(ev.currentTarget, false);
+    }
+  };
+  openModal('ovAdmAction');
+}
+
 function abrirAdmConverter(os){
   currentAction = os;
   document.getElementById('admActionTitle').textContent = 'ADM: Converter — OS #'+os;
