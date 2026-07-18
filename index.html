@@ -419,16 +419,34 @@ async function apiGet(action, params={}){
   const url = new URL(APPS_SCRIPT_URL);
   url.searchParams.set('action', action);
   Object.keys(params).forEach(k=>url.searchParams.set(k, params[k]));
-  const res = await fetch(url);
+  const res = await fetchComTimeout(url);
   return res.json();
 }
 async function apiPost(action, payload){
-  const res = await fetch(APPS_SCRIPT_URL, {
+  const res = await fetchComTimeout(APPS_SCRIPT_URL, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({action, payload})
   });
   return res.json();
+}
+// Sem isso, se o Apps Script travar/demorar demais pra responder, o fetch fica
+// pendente pra sempre e o botão que chamou fica girando eternamente. Com o
+// timeout, depois de 20s a chamada é abortada e cai no catch/finally de quem
+// chamou, mostrando um erro em vez de travar a tela.
+async function fetchComTimeout(url, options={}){
+  const controller = new AbortController();
+  const timeoutId = setTimeout(()=>controller.abort(), 20000);
+  try{
+    return await fetch(url, {...options, signal: controller.signal});
+  }catch(err){
+    if(err.name === 'AbortError'){
+      throw new Error('O servidor demorou demais pra responder (timeout de 20s). Tente novamente — se persistir, confira a aba "Execuções" no Apps Script.');
+    }
+    throw err;
+  }finally{
+    clearTimeout(timeoutId);
+  }
 }
 
 /* ==================== CARREGAR DADOS ==================== */
@@ -965,6 +983,8 @@ function abrirAdmReservar(os){
       const res = await apiPost('reservar', {os: currentAction, pin: admPin});
       if(res.ok){ toast('Reservado para '+res.gestor+'!'); closeModal('ovAdmAction'); loadData(); }
       else showMsg('msgAdmAction', res.error, false);
+    }catch(err){
+      showMsg('msgAdmAction', err.message, false);
     }finally{
       setBtnLoading(ev.currentTarget, false);
     }
@@ -988,6 +1008,8 @@ function abrirAdmNumPedido(os){
       const res = await apiPost('lancarPedido', {os: currentAction, numPedido, pin: admPin});
       if(res.ok){ toast('Nº do pedido salvo!'); closeModal('ovAdmAction'); loadData(); }
       else showMsg('msgAdmAction', res.error, false);
+    }catch(err){
+      showMsg('msgAdmAction', err.message, false);
     }finally{
       setBtnLoading(ev.currentTarget, false);
     }
@@ -1007,6 +1029,8 @@ function abrirDesfazerAdm(os, statusAtual){
       const res = await apiPost('desfazerAdm', {os: currentAction, admPin});
       if(res.ok){ toast('Desfeito! Fase atual: '+res.novoStatus); closeModal('ovAdmAction'); loadData(); }
       else showMsg('msgAdmAction', res.error, false);
+    }catch(err){
+      showMsg('msgAdmAction', err.message, false);
     }finally{
       setBtnLoading(ev.currentTarget, false);
     }
@@ -1030,6 +1054,8 @@ function abrirAdmConverter(os){
       const res = await apiPost('converter', {os: currentAction, codConvertido, admPin});
       if(res.ok){ toast('Item convertido!'); closeModal('ovAdmAction'); loadData(); }
       else showMsg('msgAdmAction', res.error, false);
+    }catch(err){
+      showMsg('msgAdmAction', err.message, false);
     }finally{
       setBtnLoading(ev.currentTarget, false);
     }
@@ -1050,6 +1076,8 @@ function abrirAdmSimples(os, action, titulo, descricao){
       const res = await apiPost(action, {os: currentAction, admPin});
       if(res.ok){ toast(titulo + ' — feito!'); closeModal('ovAdmAction'); loadData(); }
       else showMsg('msgAdmAction', res.error, false);
+    }catch(err){
+      showMsg('msgAdmAction', err.message, false);
     }finally{
       setBtnLoading(ev.currentTarget, false);
     }
