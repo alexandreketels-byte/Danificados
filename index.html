@@ -25,13 +25,6 @@
   button.primary:hover{background:var(--accent2);color:#1a1200;}
   button.danger{border-color:var(--red);color:var(--red);}
   button.small{padding:4px 8px;font-size:11px;}
-  button.loading-btn{color:transparent!important;pointer-events:none;position:relative;}
-  button.loading-btn::after{
-    content:"";position:absolute;left:50%;top:50%;width:13px;height:13px;margin:-7px 0 0 -7px;
-    border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;
-    animation:btnspin .6s linear infinite;
-  }
-  @keyframes btnspin{to{transform:rotate(360deg);}}
   .globalSearch{display:flex;align-items:center;gap:8px;padding:12px 20px 0;flex-wrap:wrap;}
   .globalSearch input[type=text]{flex:1;max-width:420px;background:var(--card);border:1px solid var(--border);
     color:var(--text);padding:9px 12px;border-radius:7px;font-size:13px;}
@@ -100,6 +93,10 @@
   .preco-de{color:var(--red);font-weight:600;}
   .preco-por{color:var(--green);font-weight:800;font-size:14px;background:#3ddc8422;
     padding:2px 8px;border-radius:6px;display:inline-block;}
+  tr.row-novo{background:#ffd23d14;}
+  tr.row-novo:hover{background:#ffd23d26;}
+  .badge-novo{background:var(--yellow);color:#3a2c00;font-size:9.5px;font-weight:800;
+    padding:1px 6px;border-radius:8px;vertical-align:middle;}
 </style>
 </head>
 <body>
@@ -124,6 +121,7 @@
 </div>
 <div class="statusChips" id="statusChips"></div>
 <div class="selectionBar" id="selectionBar"></div>
+<div class="selectionBar" id="novosBanner" style="border-color:var(--yellow);background:#ffd23d14;"></div>
 
 <main>
   <div class="table-wrap"><div class="loading">Carregando dados...</div></div>
@@ -151,7 +149,7 @@
     <div class="msg" id="msgReservar"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovReservar')">Cancelar</button>
-      <button class="primary" id="btnConfirmarReserva" onclick="confirmarReserva()">Reservar</button>
+      <button class="primary" onclick="confirmarReserva()">Reservar</button>
     </div>
   </div>
 </div>
@@ -165,7 +163,7 @@
     <div class="msg" id="msgDesfazer"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovDesfazer')">Cancelar</button>
-      <button class="danger" id="btnConfirmarDesfazer" onclick="confirmarDesfazer()">Desfazer</button>
+      <button class="danger" onclick="confirmarDesfazer()">Desfazer</button>
     </div>
   </div>
 </div>
@@ -181,7 +179,7 @@
     <div class="msg" id="msgPedido"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovPedido')">Cancelar</button>
-      <button class="primary" id="btnConfirmarNumPedido" onclick="confirmarNumPedido()">Salvar</button>
+      <button class="primary" onclick="confirmarNumPedido()">Salvar</button>
     </div>
   </div>
 </div>
@@ -223,7 +221,7 @@
       <div class="msg" id="msgAdmGate"></div>
       <div class="modal-actions">
         <button onclick="closeModal('ovAdmin')">Cancelar</button>
-        <button class="primary" id="btnEntrarAdmin" onclick="entrarAdmin()">Entrar</button>
+        <button class="primary" onclick="entrarAdmin()">Entrar</button>
       </div>
     </div>
     <div id="admPanel" style="display:none;">
@@ -236,19 +234,7 @@
       </div>
       <div class="gestor-row">
         <input type="text" id="novoGestorEmail" placeholder="E-mail (opcional)" style="flex:1;">
-        <button class="small primary" id="btnAdicionarGestor" onclick="adicionarGestor()">Adicionar</button>
-      </div>
-
-      <h4 style="color:var(--accent2);margin:16px 0 6px;">Admins</h4>
-      <p style="color:var(--muted);font-size:11px;margin:0 0 8px;">Cada admin nomeado tem seu próprio PIN e aparece pelo nome no histórico (em vez de só "ADM"). Remover um admin daqui não afeta os outros nem o PIN mestre.</p>
-      <div id="adminsList"></div>
-      <div class="gestor-row">
-        <input type="text" id="novoAdminNome" placeholder="Nome" style="flex:1;">
-        <input type="text" id="novoAdminPin" placeholder="PIN" maxlength="4" style="width:70px;">
-      </div>
-      <div class="gestor-row">
-        <input type="text" id="novoAdminEmail" placeholder="E-mail (opcional)" style="flex:1;">
-        <button class="small primary" id="btnAdicionarAdmin" onclick="adicionarAdmin()">Adicionar</button>
+        <button class="small primary" onclick="adicionarGestor()">Adicionar</button>
       </div>
       <div class="msg" id="msgAdmin"></div>
       <div class="modal-actions">
@@ -268,7 +254,7 @@
     <div class="msg" id="msgBulkReservar"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovBulkReservar')">Cancelar</button>
-      <button class="primary" id="btnConfirmarBulkReservar" onclick="confirmarBulkReservar()">Reservar todos</button>
+      <button class="primary" onclick="confirmarBulkReservar()">Reservar todos</button>
     </div>
   </div>
 </div>
@@ -285,7 +271,7 @@
     <div class="msg" id="msgBulkPedido"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovBulkPedido')">Cancelar</button>
-      <button class="primary" id="btnConfirmarBulkPedido" onclick="confirmarBulkPedido()">Salvar</button>
+      <button class="primary" onclick="confirmarBulkPedido()">Salvar</button>
     </div>
   </div>
 </div>
@@ -302,7 +288,7 @@
     <div class="msg" id="msgBulkConverter"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovBulkConverter')">Cancelar</button>
-      <button class="primary" id="btnConfirmarBulkConverter" onclick="confirmarBulkConverter()">Converter todos</button>
+      <button class="primary" onclick="confirmarBulkConverter()">Converter todos</button>
     </div>
   </div>
 </div>
@@ -343,7 +329,7 @@
     <div class="msg" id="msgModoGestor"></div>
     <div class="modal-actions">
       <button onclick="closeModal('ovModoGestor')">Cancelar</button>
-      <button class="primary" id="btnConfirmarModoGestor" onclick="confirmarModoGestor()">Entrar</button>
+      <button class="primary" onclick="confirmarModoGestor()">Entrar</button>
     </div>
   </div>
 </div>
@@ -390,6 +376,8 @@ const ADM_ONLY_COLS = new Set(['PEDIDO']);
 let currentGestor = null; // {nome, pin} quando alguém "entra como gestor"; null = modo visitante
 function isGestorMode(){ return !!currentGestor; }
 let isAdmMode = false; // true depois de validar o PIN do ADM em "Área ADM"
+// OS marcadas como "novas" pela última importação de CSV (persiste até a próxima importação ou "Limpar destaque")
+let NOVOS_OS = new Set(JSON.parse(localStorage.getItem(LS_PREFIX+'novosOS') || '[]'));
 
 // Setor que gestor/visitante enxergam. ADM vê todos os setores (Fabricante, Outros, etc).
 const SETOR_PUBLICO = 'DANIFICADOS';
@@ -409,44 +397,20 @@ let admSessionPin = null;
 let SELECTED = new Set(); // OS selecionadas pra ações em lote
 
 /* ==================== API ==================== */
-// Trava o botão (evita duplo clique) e mostra um spinner enquanto uma ação está em andamento.
-function setBtnLoading(btn, loading){
-  if(!btn) return;
-  btn.disabled = loading;
-  btn.classList.toggle('loading-btn', loading);
-}
 async function apiGet(action, params={}){
   const url = new URL(APPS_SCRIPT_URL);
   url.searchParams.set('action', action);
   Object.keys(params).forEach(k=>url.searchParams.set(k, params[k]));
-  const res = await fetchComTimeout(url);
+  const res = await fetch(url);
   return res.json();
 }
 async function apiPost(action, payload){
-  const res = await fetchComTimeout(APPS_SCRIPT_URL, {
+  const res = await fetch(APPS_SCRIPT_URL, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({action, payload})
   });
   return res.json();
-}
-// Sem isso, se o Apps Script travar/demorar demais pra responder, o fetch fica
-// pendente pra sempre e o botão que chamou fica girando eternamente. Com o
-// timeout, depois de 20s a chamada é abortada e cai no catch/finally de quem
-// chamou, mostrando um erro em vez de travar a tela.
-async function fetchComTimeout(url, options={}){
-  const controller = new AbortController();
-  const timeoutId = setTimeout(()=>controller.abort(), 20000);
-  try{
-    return await fetch(url, {...options, signal: controller.signal});
-  }catch(err){
-    if(err.name === 'AbortError'){
-      throw new Error('O servidor demorou demais pra responder (timeout de 20s). Tente novamente — se persistir, confira a aba "Execuções" no Apps Script.');
-    }
-    throw err;
-  }finally{
-    clearTimeout(timeoutId);
-  }
 }
 
 /* ==================== CARREGAR DADOS ==================== */
@@ -591,12 +555,14 @@ function renderTable(){
 
   rows.forEach(r=>{
     const os = String(r.OS);
-    html += '<tr>';
+    const isNovo = NOVOS_OS.has(os);
+    html += `<tr class="${isNovo ? 'row-novo' : ''}">`;
     if(gestor){
       html += `<td class="checkCell"><input type="checkbox" ${SELECTED.has(os)?'checked':''} onchange="toggleSelect('${os}', this.checked)"></td>`;
     }
-    cols.forEach(c=>{
-      html += `<td>${renderCell(c, r)}</td>`;
+    cols.forEach((c, idx)=>{
+      const badge = (isNovo && idx===0) ? ' <span class="badge-novo">NOVO</span>' : '';
+      html += `<td>${renderCell(c, r)}${badge}</td>`;
     });
     html += `<td class="acoes">${renderAcoes(r)}</td>`;
     html += '</tr>';
@@ -607,6 +573,20 @@ function renderTable(){
   document.getElementById('resumo').textContent = rows.length + ' de ' + getScopedRows().length + ' itens';
   document.getElementById('globalSearchCount').textContent = GLOBAL_SEARCH ? (rows.length + ' resultado(s)') : '';
   renderSelectionBar();
+  renderNovosBanner();
+}
+
+function renderNovosBanner(){
+  const box = document.getElementById('novosBanner');
+  if(NOVOS_OS.size === 0){ box.style.display = 'none'; box.innerHTML=''; return; }
+  box.style.display = 'flex';
+  box.innerHTML = `<b>🆕 ${NOVOS_OS.size} item(ns) novo(s)</b> desde a última importação
+    <button class="small" onclick="limparDestaqueNovos()">Limpar destaque</button>`;
+}
+function limparDestaqueNovos(){
+  NOVOS_OS = new Set();
+  localStorage.removeItem(LS_PREFIX+'novosOS');
+  renderTable();
 }
 
 function renderCell(col, r){
@@ -626,34 +606,26 @@ function renderCell(col, r){
 function renderAcoes(r){
   const os = r.OS;
   const historico = `<button class="small" onclick="abrirHistorico('${os}')">Histórico</button>`;
-  const gestor = isGestorMode();
-  const adm = isAdmMode;
-  if(!gestor && !adm) return historico; // visitante só vê o histórico, sem ações
+  if(!isGestorMode()) return historico; // visitante só vê o histórico, sem ações
 
   const status = r.STATUS || 'Disponível';
   let btns = historico;
 
   if(status === 'Disponível'){
-    if(gestor) btns += `<button class="small primary" onclick="abrirReservar('${os}')">Reservar</button>`;
-    if(adm) btns += `<button class="small primary" onclick="abrirAdmReservar('${os}')">ADM: Reservar</button>`;
+    btns += `<button class="small primary" onclick="abrirReservar('${os}')">Reservar</button>`;
   } else if(status === 'Reservado'){
-    if(gestor) btns += `<button class="small danger" onclick="abrirDesfazer('${os}')">Desfazer</button>`;
-    if(adm) btns += `<button class="small" onclick="abrirAdmConverter('${os}')">ADM: Converter</button>`;
+    btns += `<button class="small danger" onclick="abrirDesfazer('${os}')">Desfazer</button>`;
+    btns += `<button class="small" onclick="abrirAdmConverter('${os}')">ADM: Converter</button>`;
   } else if(status === 'Convertido'){
-    if(gestor) btns += `<button class="small primary" onclick="abrirNumPedido('${os}')">Lançar Pedido</button>`;
-    if(adm) btns += `<button class="small primary" onclick="abrirAdmNumPedido('${os}')">ADM: Lançar Pedido</button>`;
+    btns += `<button class="small primary" onclick="abrirNumPedido('${os}')">Lançar Pedido</button>`;
   } else if(status === 'Pedido Lançado'){
-    if(adm) btns += `<button class="small" onclick="abrirAdmSimples('${os}', 'solicitarSeparacao', 'Solicitar Separação', 'Solicita o encerramento da OS e a separação do item pra distribuição.')">ADM: Solicitar Separação</button>`;
+    btns += `<button class="small" onclick="abrirAdmSimples('${os}', 'solicitarSeparacao', 'Solicitar Separação', 'Solicita o encerramento da OS e a separação do item pra distribuição.')">ADM: Solicitar Separação</button>`;
   } else if(status === 'Separação Solicitada'){
-    if(adm) btns += `<button class="small" onclick="abrirAdmSimples('${os}', 'confirmarOsEncerrada', 'Confirmar OS Encerrada', 'Confirma que a OS foi encerrada e o item separado.')">ADM: Confirmar OS Encerrada</button>`;
+    btns += `<button class="small" onclick="abrirAdmSimples('${os}', 'confirmarOsEncerrada', 'Confirmar OS Encerrada', 'Confirma que a OS foi encerrada e o item separado.')">ADM: Confirmar OS Encerrada</button>`;
   } else if(status === 'OS Encerrada'){
-    if(adm) btns += `<button class="small primary" onclick="abrirAdmSimples('${os}', 'finalizar', 'Finalizar', 'Marca o item como finalizado — pedido atendido.')">ADM: Finalizar</button>`;
+    btns += `<button class="small primary" onclick="abrirAdmSimples('${os}', 'finalizar', 'Finalizar', 'Marca o item como finalizado — pedido atendido.')">ADM: Finalizar</button>`;
   }
-  // ADM pode desfazer qualquer fase em andamento (menos "Disponível", que já é o início)
-  if(adm && status !== 'Disponível'){
-    btns += `<button class="small danger" onclick="abrirDesfazerAdm('${os}', '${status}')">ADM: Desfazer</button>`;
-  }
-  // Finalizado (sem ADM): só Histórico
+  // Finalizado: só Histórico
   return btns;
 }
 
@@ -729,18 +701,12 @@ function abrirBulkReservar(){
 async function confirmarBulkReservar(){
   const pin = document.getElementById('pinBulkReservar').value.trim();
   if(pin.length !== 4){ showMsg('msgBulkReservar','Digite os 4 dígitos do seu PIN.', false); return; }
-  const btn = document.getElementById('btnConfirmarBulkReservar');
-  setBtnLoading(btn, true);
-  try{
-    const res = await apiPost('bulk', {acao:'reservar', osList: Array.from(SELECTED), pin});
-    if(!res.ok){ showMsg('msgBulkReservar', res.error, false); return; }
-    closeModal('ovBulkReservar');
-    SELECTED.clear();
-    loadData();
-    mostrarResultadoBulk('Reservar', res);
-  }finally{
-    setBtnLoading(btn, false);
-  }
+  const res = await apiPost('bulk', {acao:'reservar', osList: Array.from(SELECTED), pin});
+  if(!res.ok){ showMsg('msgBulkReservar', res.error, false); return; }
+  closeModal('ovBulkReservar');
+  SELECTED.clear();
+  loadData();
+  mostrarResultadoBulk('Reservar', res);
 }
 
 /* ==================== LANÇAR PEDIDO EM LOTE ==================== */
@@ -753,18 +719,12 @@ async function confirmarBulkPedido(){
   const pin = document.getElementById('pinBulkPedido').value.trim();
   if(!numPedido){ showMsg('msgBulkPedido','Informe o número do pedido.', false); return; }
   if(pin.length !== 4){ showMsg('msgBulkPedido','Digite os 4 dígitos do seu PIN.', false); return; }
-  const btn = document.getElementById('btnConfirmarBulkPedido');
-  setBtnLoading(btn, true);
-  try{
-    const res = await apiPost('bulk', {acao:'lancarPedido', osList: Array.from(SELECTED), numPedido, pin});
-    if(!res.ok){ showMsg('msgBulkPedido', res.error, false); return; }
-    closeModal('ovBulkPedido');
-    SELECTED.clear();
-    loadData();
-    mostrarResultadoBulk('Lançar Pedido', res);
-  }finally{
-    setBtnLoading(btn, false);
-  }
+  const res = await apiPost('bulk', {acao:'lancarPedido', osList: Array.from(SELECTED), numPedido, pin});
+  if(!res.ok){ showMsg('msgBulkPedido', res.error, false); return; }
+  closeModal('ovBulkPedido');
+  SELECTED.clear();
+  loadData();
+  mostrarResultadoBulk('Lançar Pedido', res);
 }
 
 /* ==================== CONVERTER EM LOTE (ADM) ==================== */
@@ -777,38 +737,27 @@ async function confirmarBulkConverter(){
   const admPin = document.getElementById('pinBulkConverter').value.trim();
   if(!codigo){ showMsg('msgBulkConverter','Informe o código danificado convertido.', false); return; }
   if(!admPin){ showMsg('msgBulkConverter','Digite o PIN do ADM.', false); return; }
-  const btn = document.getElementById('btnConfirmarBulkConverter');
-  setBtnLoading(btn, true);
-  try{
-    const res = await apiPost('bulk', {acao:'converter', osList: Array.from(SELECTED), codigo, admPin});
-    if(!res.ok){ showMsg('msgBulkConverter', res.error, false); return; }
-    closeModal('ovBulkConverter');
-    SELECTED.clear();
-    loadData();
-    mostrarResultadoBulk('Converter', res);
-  }finally{
-    setBtnLoading(btn, false);
-  }
+  const res = await apiPost('bulk', {acao:'converter', osList: Array.from(SELECTED), codigo, admPin});
+  if(!res.ok){ showMsg('msgBulkConverter', res.error, false); return; }
+  closeModal('ovBulkConverter');
+  SELECTED.clear();
+  loadData();
+  mostrarResultadoBulk('Converter', res);
 }
 
 /* ==================== AÇÕES ADM SIMPLES EM LOTE ==================== */
 function abrirBulkAdmSimples(acao, titulo, descricao){
   document.getElementById('bulkAdmTitle').textContent = titulo + ' — ' + SELECTED.size + ' itens';
   document.getElementById('bulkAdmDesc').textContent = descricao;
-  document.getElementById('btnBulkAdmSimplesConfirm').onclick = async (ev)=>{
+  document.getElementById('btnBulkAdmSimplesConfirm').onclick = async ()=>{
     const admPin = document.getElementById('pinBulkAdmSimples').value.trim();
     if(!admPin){ showMsg('msgBulkAdmSimples','Digite o PIN do ADM.', false); return; }
-    setBtnLoading(ev.currentTarget, true);
-    try{
-      const res = await apiPost('bulk', {acao, osList: Array.from(SELECTED), admPin});
-      if(!res.ok){ showMsg('msgBulkAdmSimples', res.error, false); return; }
-      closeModal('ovBulkAdmSimples');
-      SELECTED.clear();
-      loadData();
-      mostrarResultadoBulk(titulo, res);
-    }finally{
-      setBtnLoading(ev.currentTarget, false);
-    }
+    const res = await apiPost('bulk', {acao, osList: Array.from(SELECTED), admPin});
+    if(!res.ok){ showMsg('msgBulkAdmSimples', res.error, false); return; }
+    closeModal('ovBulkAdmSimples');
+    SELECTED.clear();
+    loadData();
+    mostrarResultadoBulk(titulo, res);
   };
   openModal('ovBulkAdmSimples');
 }
@@ -845,20 +794,14 @@ document.getElementById('btnModoGestor').onclick = ()=>{
 async function confirmarModoGestor(){
   const pin = document.getElementById('pinModoGestor').value.trim();
   if(pin.length !== 4){ showMsg('msgModoGestor','Digite os 4 dígitos do seu PIN.', false); return; }
-  const btn = document.getElementById('btnConfirmarModoGestor');
-  setBtnLoading(btn, true);
-  try{
-    const res = await apiPost('checkGestorPin', {pin});
-    if(!res.ok){ showMsg('msgModoGestor', res.error, false); return; }
-    currentGestor = { nome: res.nome, pin };
-    sessionStorage.setItem(LS_PREFIX+'gestorPin', pin);
-    closeModal('ovModoGestor');
-    updateModeUI();
-    renderTable();
-    toast('Bem-vindo, ' + res.nome + '!');
-  }finally{
-    setBtnLoading(btn, false);
-  }
+  const res = await apiPost('checkGestorPin', {pin});
+  if(!res.ok){ showMsg('msgModoGestor', res.error, false); return; }
+  currentGestor = { nome: res.nome, pin };
+  sessionStorage.setItem(LS_PREFIX+'gestorPin', pin);
+  closeModal('ovModoGestor');
+  updateModeUI();
+  renderTable();
+  toast('Bem-vindo, ' + res.nome + '!');
 }
 async function restaurarSessaoGestor(){
   const pin = sessionStorage.getItem(LS_PREFIX+'gestorPin');
@@ -917,15 +860,9 @@ function abrirReservar(os){
 async function confirmarReserva(){
   const pin = document.getElementById('pinReservar').value.trim();
   if(pin.length !== 4){ showMsg('msgReservar','Digite os 4 dígitos do seu PIN.', false); return; }
-  const btn = document.getElementById('btnConfirmarReserva');
-  setBtnLoading(btn, true);
-  try{
-    const res = await apiPost('reservar', {os: currentAction, pin});
-    if(res.ok){ toast('Reservado para '+res.gestor+'!'); closeModal('ovReservar'); loadData(); }
-    else showMsg('msgReservar', res.error, false);
-  }finally{
-    setBtnLoading(btn, false);
-  }
+  const res = await apiPost('reservar', {os: currentAction, pin});
+  if(res.ok){ toast('Reservado para '+res.gestor+'!'); closeModal('ovReservar'); loadData(); }
+  else showMsg('msgReservar', res.error, false);
 }
 
 /* ==================== DESFAZER RESERVA ==================== */
@@ -937,15 +874,9 @@ function abrirDesfazer(os){
 async function confirmarDesfazer(){
   const pin = document.getElementById('pinDesfazer').value.trim();
   if(pin.length !== 4){ showMsg('msgDesfazer','Digite os 4 dígitos do seu PIN.', false); return; }
-  const btn = document.getElementById('btnConfirmarDesfazer');
-  setBtnLoading(btn, true);
-  try{
-    const res = await apiPost('desfazerReserva', {os: currentAction, pin});
-    if(res.ok){ toast('Reserva desfeita.'); closeModal('ovDesfazer'); loadData(); }
-    else showMsg('msgDesfazer', res.error, false);
-  }finally{
-    setBtnLoading(btn, false);
-  }
+  const res = await apiPost('desfazerReserva', {os: currentAction, pin});
+  if(res.ok){ toast('Reserva desfeita.'); closeModal('ovDesfazer'); loadData(); }
+  else showMsg('msgDesfazer', res.error, false);
 }
 
 /* ==================== LANÇAR PEDIDO (gestor) ==================== */
@@ -959,85 +890,12 @@ async function confirmarNumPedido(){
   const pin = document.getElementById('pinPedido').value.trim();
   if(!numPedido){ showMsg('msgPedido','Informe o número do pedido.', false); return; }
   if(pin.length !== 4){ showMsg('msgPedido','Digite os 4 dígitos do seu PIN.', false); return; }
-  const btn = document.getElementById('btnConfirmarNumPedido');
-  setBtnLoading(btn, true);
-  try{
-    const res = await apiPost('lancarPedido', {os: currentAction, numPedido, pin});
-    if(res.ok){ toast('Nº do pedido salvo!'); closeModal('ovPedido'); loadData(); }
-    else showMsg('msgPedido', res.error, false);
-  }finally{
-    setBtnLoading(btn, false);
-  }
+  const res = await apiPost('lancarPedido', {os: currentAction, numPedido, pin});
+  if(res.ok){ toast('Nº do pedido salvo!'); closeModal('ovPedido'); loadData(); }
+  else showMsg('msgPedido', res.error, false);
 }
 
 /* ==================== AÇÕES ADM ==================== */
-function abrirAdmReservar(os){
-  currentAction = os;
-  document.getElementById('admActionTitle').textContent = 'ADM: Reservar — OS #'+os;
-  document.getElementById('admActionDesc').textContent = 'Reserva o item em nome do ADM, avançando pra fase "Reservado".';
-  document.getElementById('admActionExtra').innerHTML = '';
-  document.getElementById('btnAdmActionConfirm').onclick = async (ev)=>{
-    const admPin = document.getElementById('pinAdmAction').value.trim();
-    setBtnLoading(ev.currentTarget, true);
-    try{
-      const res = await apiPost('reservar', {os: currentAction, pin: admPin});
-      if(res.ok){ toast('Reservado para '+res.gestor+'!'); closeModal('ovAdmAction'); loadData(); }
-      else showMsg('msgAdmAction', res.error, false);
-    }catch(err){
-      showMsg('msgAdmAction', err.message, false);
-    }finally{
-      setBtnLoading(ev.currentTarget, false);
-    }
-  };
-  openModal('ovAdmAction');
-}
-
-function abrirAdmNumPedido(os){
-  currentAction = os;
-  document.getElementById('admActionTitle').textContent = 'ADM: Lançar Pedido — OS #'+os;
-  document.getElementById('admActionDesc').textContent = 'Grava o número do pedido e avança o item pra fase "Pedido Lançado".';
-  document.getElementById('admActionExtra').innerHTML = `
-    <label>Número do pedido</label>
-    <input type="text" id="admNumPedidoValue" placeholder="Ex: 480123">`;
-  document.getElementById('btnAdmActionConfirm').onclick = async (ev)=>{
-    const numPedido = document.getElementById('admNumPedidoValue').value.trim();
-    const admPin = document.getElementById('pinAdmAction').value.trim();
-    if(!numPedido){ showMsg('msgAdmAction','Informe o número do pedido.', false); return; }
-    setBtnLoading(ev.currentTarget, true);
-    try{
-      const res = await apiPost('lancarPedido', {os: currentAction, numPedido, pin: admPin});
-      if(res.ok){ toast('Nº do pedido salvo!'); closeModal('ovAdmAction'); loadData(); }
-      else showMsg('msgAdmAction', res.error, false);
-    }catch(err){
-      showMsg('msgAdmAction', err.message, false);
-    }finally{
-      setBtnLoading(ev.currentTarget, false);
-    }
-  };
-  openModal('ovAdmAction');
-}
-
-function abrirDesfazerAdm(os, statusAtual){
-  currentAction = os;
-  document.getElementById('admActionTitle').textContent = 'ADM: Desfazer — OS #'+os;
-  document.getElementById('admActionDesc').textContent = 'Volta o item uma fase pra trás (fase atual: "' + statusAtual + '"). Use com cuidado — essa ação não tem "refazer".';
-  document.getElementById('admActionExtra').innerHTML = '';
-  document.getElementById('btnAdmActionConfirm').onclick = async (ev)=>{
-    const admPin = document.getElementById('pinAdmAction').value.trim();
-    setBtnLoading(ev.currentTarget, true);
-    try{
-      const res = await apiPost('desfazerAdm', {os: currentAction, admPin});
-      if(res.ok){ toast('Desfeito! Fase atual: '+res.novoStatus); closeModal('ovAdmAction'); loadData(); }
-      else showMsg('msgAdmAction', res.error, false);
-    }catch(err){
-      showMsg('msgAdmAction', err.message, false);
-    }finally{
-      setBtnLoading(ev.currentTarget, false);
-    }
-  };
-  openModal('ovAdmAction');
-}
-
 function abrirAdmConverter(os){
   currentAction = os;
   document.getElementById('admActionTitle').textContent = 'ADM: Converter — OS #'+os;
@@ -1045,20 +903,13 @@ function abrirAdmConverter(os){
   document.getElementById('admActionExtra').innerHTML = `
     <label>Código danificado convertido</label>
     <input type="text" id="admConverterValue" placeholder="Ex: DAN-00123">`;
-  document.getElementById('btnAdmActionConfirm').onclick = async (ev)=>{
+  document.getElementById('btnAdmActionConfirm').onclick = async ()=>{
     const codConvertido = document.getElementById('admConverterValue').value.trim();
     const admPin = document.getElementById('pinAdmAction').value.trim();
     if(!codConvertido){ showMsg('msgAdmAction','Informe o código.', false); return; }
-    setBtnLoading(ev.currentTarget, true);
-    try{
-      const res = await apiPost('converter', {os: currentAction, codConvertido, admPin});
-      if(res.ok){ toast('Item convertido!'); closeModal('ovAdmAction'); loadData(); }
-      else showMsg('msgAdmAction', res.error, false);
-    }catch(err){
-      showMsg('msgAdmAction', err.message, false);
-    }finally{
-      setBtnLoading(ev.currentTarget, false);
-    }
+    const res = await apiPost('converter', {os: currentAction, codConvertido, admPin});
+    if(res.ok){ toast('Item convertido!'); closeModal('ovAdmAction'); loadData(); }
+    else showMsg('msgAdmAction', res.error, false);
   };
   openModal('ovAdmAction');
 }
@@ -1069,18 +920,11 @@ function abrirAdmSimples(os, action, titulo, descricao){
   document.getElementById('admActionTitle').textContent = 'ADM: ' + titulo + ' — OS #' + os;
   document.getElementById('admActionDesc').textContent = descricao;
   document.getElementById('admActionExtra').innerHTML = '';
-  document.getElementById('btnAdmActionConfirm').onclick = async (ev)=>{
+  document.getElementById('btnAdmActionConfirm').onclick = async ()=>{
     const admPin = document.getElementById('pinAdmAction').value.trim();
-    setBtnLoading(ev.currentTarget, true);
-    try{
-      const res = await apiPost(action, {os: currentAction, admPin});
-      if(res.ok){ toast(titulo + ' — feito!'); closeModal('ovAdmAction'); loadData(); }
-      else showMsg('msgAdmAction', res.error, false);
-    }catch(err){
-      showMsg('msgAdmAction', err.message, false);
-    }finally{
-      setBtnLoading(ev.currentTarget, false);
-    }
+    const res = await apiPost(action, {os: currentAction, admPin});
+    if(res.ok){ toast(titulo + ' — feito!'); closeModal('ovAdmAction'); loadData(); }
+    else showMsg('msgAdmAction', res.error, false);
   };
   openModal('ovAdmAction');
 }
@@ -1107,7 +951,6 @@ document.getElementById('btnAdmin').onclick = ()=>{
     document.getElementById('admGate').style.display = 'none';
     document.getElementById('admPanel').style.display = 'block';
     carregarGestores();
-    carregarAdmins();
   } else {
     document.getElementById('admGate').style.display = 'block';
     document.getElementById('admPanel').style.display = 'none';
@@ -1116,26 +959,19 @@ document.getElementById('btnAdmin').onclick = ()=>{
 };
 async function entrarAdmin(){
   const pin = document.getElementById('pinAdmGate').value.trim();
-  const btn = document.getElementById('btnEntrarAdmin');
-  setBtnLoading(btn, true);
-  try{
-    const res = await apiPost('checkAdmPin', {admPin: pin});
-    if(res.ok){
-      admSessionPin = pin;
-      isAdmMode = true;
-      sessionStorage.setItem(LS_PREFIX+'admPin', pin);
-      updateAdmUI();
-      document.getElementById('admGate').style.display = 'none';
-      document.getElementById('admPanel').style.display = 'block';
-      carregarGestores();
-      carregarAdmins();
-      renderStatusChips();
-      renderTable();
-    } else {
-      showMsg('msgAdmGate', 'PIN incorreto.', false);
-    }
-  }finally{
-    setBtnLoading(btn, false);
+  const res = await apiPost('checkAdmPin', {admPin: pin});
+  if(res.ok){
+    admSessionPin = pin;
+    isAdmMode = true;
+    sessionStorage.setItem(LS_PREFIX+'admPin', pin);
+    updateAdmUI();
+    document.getElementById('admGate').style.display = 'none';
+    document.getElementById('admPanel').style.display = 'block';
+    carregarGestores();
+    renderStatusChips();
+    renderTable();
+  } else {
+    showMsg('msgAdmGate', 'PIN incorreto.', false);
   }
 }
 function sairModoAdm(){
@@ -1183,68 +1019,19 @@ async function adicionarGestor(){
   const pin = document.getElementById('novoGestorPin').value.trim();
   const email = document.getElementById('novoGestorEmail').value.trim();
   if(!nome || pin.length!==4){ showMsg('msgAdmin','Preencha nome e PIN de 4 dígitos.', false); return; }
-  const btn = document.getElementById('btnAdicionarGestor');
-  setBtnLoading(btn, true);
-  try{
-    const res = await apiPost('addGestor', {nome, pin, email, admPin: admSessionPin});
-    if(res.ok){
-      showMsg('msgAdmin','Gestor adicionado!', true);
-      document.getElementById('novoGestorNome').value='';
-      document.getElementById('novoGestorPin').value='';
-      document.getElementById('novoGestorEmail').value='';
-      carregarGestores();
-    } else showMsg('msgAdmin', res.error, false);
-  }finally{
-    setBtnLoading(btn, false);
-  }
+  const res = await apiPost('addGestor', {nome, pin, email, admPin: admSessionPin});
+  if(res.ok){
+    showMsg('msgAdmin','Gestor adicionado!', true);
+    document.getElementById('novoGestorNome').value='';
+    document.getElementById('novoGestorPin').value='';
+    document.getElementById('novoGestorEmail').value='';
+    carregarGestores();
+  } else showMsg('msgAdmin', res.error, false);
 }
 async function removerGestor(nome){
   if(!confirm('Remover gestor '+nome+'?')) return;
   const res = await apiPost('removeGestor', {nome, admPin: admSessionPin});
   if(res.ok){ carregarGestores(); } else { showMsg('msgAdmin', res.error, false); }
-}
-
-async function carregarAdmins(){
-  const res = await apiGet('getAdminsNomes');
-  const list = document.getElementById('adminsList');
-  if(!res.ok){ list.innerHTML = 'Erro ao carregar admins.'; return; }
-  list.innerHTML = res.admins.map(a=>`
-    <div class="gestor-row">
-      <span>${escapeHtml(a.nome)}</span>
-      <input type="text" value="${escapeHtml(a.email||'')}" placeholder="sem e-mail" style="flex:1;font-size:11px;"
-        onchange="salvarEmailAdmin('${a.nome.replace(/'/g,"\\'")}', this.value)">
-      <button class="small danger" onclick="removerAdmin('${a.nome.replace(/'/g,"\\'")}')">Remover</button>
-    </div>`).join('') || '<div style="color:var(--muted)">Nenhum admin nomeado — só o PIN mestre está ativo.</div>';
-}
-async function salvarEmailAdmin(nome, email){
-  const res = await apiPost('updateAdminEmail', {nome, email: email.trim(), admPin: admSessionPin});
-  if(res.ok){ showMsg('msgAdmin', 'E-mail de ' + nome + ' atualizado!', true); }
-  else showMsg('msgAdmin', res.error, false);
-}
-async function adicionarAdmin(){
-  const nome = document.getElementById('novoAdminNome').value.trim();
-  const pin = document.getElementById('novoAdminPin').value.trim();
-  const email = document.getElementById('novoAdminEmail').value.trim();
-  if(!nome || pin.length!==4){ showMsg('msgAdmin','Preencha nome e PIN de 4 dígitos.', false); return; }
-  const btn = document.getElementById('btnAdicionarAdmin');
-  setBtnLoading(btn, true);
-  try{
-    const res = await apiPost('addAdmin', {nome, pin, email, admPin: admSessionPin});
-    if(res.ok){
-      showMsg('msgAdmin','Admin adicionado!', true);
-      document.getElementById('novoAdminNome').value='';
-      document.getElementById('novoAdminPin').value='';
-      document.getElementById('novoAdminEmail').value='';
-      carregarAdmins();
-    } else showMsg('msgAdmin', res.error, false);
-  }finally{
-    setBtnLoading(btn, false);
-  }
-}
-async function removerAdmin(nome){
-  if(!confirm('Remover admin '+nome+'? (o PIN mestre continua funcionando normalmente)')) return;
-  const res = await apiPost('removeAdmin', {nome, admPin: admSessionPin});
-  if(res.ok){ carregarAdmins(); } else { showMsg('msgAdmin', res.error, false); }
 }
 
 /* ==================== IMPORTAR CSV ==================== */
@@ -1253,28 +1040,27 @@ document.getElementById('fileInput').onchange = async (e)=>{
   const file = e.target.files[0];
   if(!file) return;
   const admPin = prompt('PIN do ADM para importar:');
-  if(!admPin){ e.target.value = ''; return; }
-  const btnImport = document.getElementById('btnImport');
-  setBtnLoading(btnImport, true);
-  try{
-    const text = await readFileSmart(file);
-    const rows = parseCSV(text);
-    if(!rows.length){ toast('Nenhuma linha válida encontrada no CSV.', false); return; }
+  if(!admPin) return;
+  const text = await readFileSmart(file);
+  const rows = parseCSV(text);
+  if(!rows.length){ toast('Nenhuma linha válida encontrada no CSV.', false); return; }
 
-    const CHUNK = 200;
-    let inseridas=0, atualizadas=0, ignoradas=0;
-    for(let i=0;i<rows.length;i+=CHUNK){
-      const chunk = rows.slice(i, i+CHUNK);
-      const res = await apiPost('importCSV', {rows: chunk, admPin});
-      if(!res.ok){ toast('Erro na importação: '+res.error, false); return; }
-      inseridas += res.inseridas; atualizadas += res.atualizadas; ignoradas += res.ignoradas;
-    }
-    toast(`Importação concluída: ${inseridas} novos, ${atualizadas} atualizados, ${ignoradas} ignorados.`);
-    loadData();
-  }finally{
-    setBtnLoading(btnImport, false);
-    e.target.value = '';
+  const CHUNK = 200;
+  let inseridas=0, atualizadas=0, ignoradas=0, novasOS=[];
+  for(let i=0;i<rows.length;i+=CHUNK){
+    const chunk = rows.slice(i, i+CHUNK);
+    const res = await apiPost('importCSV', {rows: chunk, admPin});
+    if(!res.ok){ toast('Erro na importação: '+res.error, false); return; }
+    inseridas += res.inseridas; atualizadas += res.atualizadas; ignoradas += res.ignoradas;
+    if(res.novasOS && res.novasOS.length) novasOS = novasOS.concat(res.novasOS);
   }
+  // marca as OS novas dessa importação pra destacar na tabela (substitui o destaque anterior)
+  NOVOS_OS = new Set(novasOS.map(String));
+  localStorage.setItem(LS_PREFIX+'novosOS', JSON.stringify(Array.from(NOVOS_OS)));
+
+  toast(`Importação concluída: ${inseridas} novos, ${atualizadas} atualizados, ${ignoradas} ignorados.`);
+  loadData();
+  e.target.value = '';
 };
 
 async function readFileSmart(file){
